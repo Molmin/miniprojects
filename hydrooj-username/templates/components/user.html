@@ -1,0 +1,61 @@
+{% macro render_inline(udoc, avatar=true, badge=true, modbadge=true, levelbadge=true) %}
+{% if udoc %}
+<span class="user-profile-link">
+  {% if avatar %}
+    <img class="small user-profile-avatar v-center" loading="lazy" src="{{ avatarUrl(udoc.avatar|default('')) }}" width="20" height="20">
+  {% endif %}
+  <a
+    class="user-profile-name"
+    href="{{ url('user_detail', uid=udoc._id) }}"
+    style="
+      {% if udoc.badge and udoc.badge.split('#')[3] %} 
+        {% if udoc.badge.split('#')[3] == 'purple' %}
+          color: #03a89e; font-weight: bold;
+        {% elif udoc.badge.split('#')[3] == 'brown' %}
+          color: #03a89e; font-weight: bold;
+        {% elif udoc.badge.split('#')[3] == 'black' %}
+          color: #03a89e; font-weight: bold;
+        {% else %} color: #777;
+        {% endif %}
+      {% elif not udoc.level %} color: #777;
+      {% elif udoc.level >= 7 %} color: #03a89e; font-weight: bold;
+      {% elif udoc.level >= 5 %} color: #e74c3c; font-weight: bold;
+      {% elif udoc.level >= 4 %} color: #e67e22; font-weight: bold;
+      {% elif udoc.level >= 3 %} color: #5eb95e;
+      {% elif udoc.level >= 2 %} color: #0e90d2;
+      {% else %} color: #777;
+      {% endif %}
+    "
+    {% if modbadge and udoc.hasPriv and udoc.hasPriv(PRIV.PRIV_MOD_BADGE) %}
+      data-tooltip="{{ _('SuperUser') }}"
+    {% elif modbadge and udoc.hasPerm and udoc.hasPerm(perm.PERM_MOD_BADGE) %}
+      data-tooltip="{{ _('Moderator') }}"
+    {% endif %}
+  >
+    {% if handler.user.hasPerm(perm.PREM_VIEW_DISPLAYNAME) and udoc.displayName and udoc.displayName != udoc.uname %}
+      {{ udoc.displayName }} ({{ udoc.uname }})
+    {% else %}
+      {{ udoc.uname }}
+    {% endif %}
+  </a>
+  {% if badge %}
+    {% if levelbadge and udoc.level %}
+      {% set level = udoc.level %}
+      <a class="user-profile-badge v-center badge--lv{{ level }}" href="{{ url('user_detail', uid=udoc._id) }}" data-tooltip="LV {{ level }}: Top {{ model.builtin.LEVELS[level]|default('N/A') }}%">LV {{ level }}</a>
+    {% endif %}
+  {% endif %}
+</span>
+{% else %}
+  <span class="user-profile-link">
+    {% if avatar %}
+      <img class="small user-profile-avatar v-center" src="{{ UiContext.cdn_prefix }}img/avatar.png" width="20" height="20">
+    {% endif %}
+    <a class="user-profile-name" href="#">
+      {{ _('Unknown User') }}
+    </a>
+    {% if badge %}
+      <a class="user-profile-badge v-center badge--lv0" href="#" title="LV0">LV 0</a>
+    {% endif %}
+  </span>
+{% endif %}
+{% endmacro %}

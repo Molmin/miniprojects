@@ -1,0 +1,39 @@
+<li class="section__tab-item">
+  <h1 class="section__tab-title">{{ _('Pedants') }}</h1>
+  <div class="section__tab-main">
+    {% if not pedantdocs.length %}
+    {{ nothing.render("This person is lazy and didn't join any contests or homework.") }}
+    {% else %}
+    <div class="typo section__body no-media">
+      <ul>
+        {% for tdoc in tdocs %}
+        <li>
+          <a class="contest-type--{{ tdoc.rule }}"
+            href="{{ url('contest_detail' if tdoc.rule !== 'homework' else 'homework_detail', tid=tdoc.docId) }}">
+            {{ tdoc.title }} <span class="contest-type-tag"><span class="icon icon-award"></span>{{
+              _(model.contest.RULES[tdoc['rule']].TEXT) }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</li>
+
+<script>
+  $(document).ready(() => {
+    var { udoc } = UiContext,css;
+    if(udoc.badge&&udoc.badge.split('#')[3]){
+      
+    }
+    // {% elif not udoc.level %} color: #777;
+    // {% elif udoc.level >= 7 %} color: #03a89e; font - weight: bold;
+    // {% elif udoc.level >= 5 %} color: #e74c3c; font - weight: bold;
+    // {% elif udoc.level >= 4 %} color: #e67e22; font - weight: bold;
+    // {% elif udoc.level >= 3 %} color: #5eb95e;
+    // {% elif udoc.level >= 2 %} color: #0e90d2;
+    // {% else %} color: #777;
+    $('.profile-header__main>h1').css({ 'color': 'blue' });
+  })
+</script>
