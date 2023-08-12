@@ -1,0 +1,39 @@
+{% extends "layout/basic.html" %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-9 columns">
+    <div class="section">
+      <div class="section__body">
+        <form method="post">
+          <div class="row">
+            {{ form.form_text({
+                columns: 3,
+                label: 'UID',
+                name: 'uid',
+                value: '',
+                autofocus: true,
+                row: false
+            }) }}
+            {{ form.form_text({
+                columns: 9,
+                label: 'Badge',
+                name: 'badge',
+                placeholder: '标签内容#背景颜色#文字颜色',
+                value: '',
+                row: false
+            }) }}
+          </div>
+          <div class="row">
+            <div class="columns">
+              <button name="operation" value="update" type="submit" class="rounded primary button">
+                {{ _('Create') }}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "layout/basic.html" %}
+{% import "components/paginator.html" as paginator with context %}
+
+{% block content %}
+<div class="row">
+  <div class="medium-10 columns">
+    <div class="section display-mode">
+      <div class="section__body no-padding">
+        {{ paginator.render(page, ppcount, position='top', add_qs=('q=' + qs if qs else '')) }}
+        <table class="data-table hide-problem-tag">
+          <colgroup>
+            <col class="col--name">
+          </colgroup>
+          <thead>
+            <tr>
+              <th class="col--name">{{ _('Problem') }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {%- for data in sols -%}
+            <tr>
+              <td class="col--name">
+                <a href="{{ url('solution_detail', solutionId=data.pid) }}">
+                  <strong>{{ data.pid }}</strong>
+                  {{ data.title }}
+                </a>
+              </td>
+            </tr>
+            {%- endfor -%}
+          </tbody>
+        </table>
+        {{ paginator.render(page, ppcount, add_qs=('q=' + qs if qs else '')) }}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
