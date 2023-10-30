@@ -45,6 +45,7 @@ class Service {
         try { statement = Object.entries(JSON.parse(statement))[0][1] as string }
         catch (e) { }
         writeFileSync(`data/${target}/problem_zh.md`, statement)
+        console.log(`Saved Problem Summary`)
     }
 
     async getFiles(pid: string) {
@@ -80,7 +81,7 @@ interface DownloadConfig {
     domain: string
     problem: {
         pid: string
-        additional_files: boolean
+        additional_file: boolean
         testdata: boolean
         statement: boolean
     }[]
@@ -106,12 +107,16 @@ async function main() {
         ensureDirSync(`data/${url_prefix}/additional_file`)
         const { testdata, additional_file } = await service.getFiles(pid)
         if (problem.statement) await service.getProblemSummary(pid, url_prefix)
-        const testdata_links = await service.getLinks(pid, testdata, 'testdata')
-        for (let [filename, link] of Object.entries(testdata_links))
-            await service.downloadFile(link as string, `${url_prefix}/testdata/${filename}`)
-        const additional_file_links = await service.getLinks(pid, additional_file, 'additional_file')
-        for (let [filename, link] of Object.entries(additional_file_links))
-            await service.downloadFile(link as string, `${url_prefix}/additional_file/${filename}`)
+        if (problem.testdata) {
+            const testdata_links = await service.getLinks(pid, testdata, 'testdata')
+            for (let [filename, link] of Object.entries(testdata_links))
+                await service.downloadFile(link as string, `${url_prefix}/testdata/${filename}`)
+        }
+        if (problem.additional_file) {
+            const additional_file_links = await service.getLinks(pid, additional_file, 'additional_file')
+            for (let [filename, link] of Object.entries(additional_file_links))
+                await service.downloadFile(link as string, `${url_prefix}/additional_file/${filename}`)
+        }
     }
 }
 
