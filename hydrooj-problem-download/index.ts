@@ -1,6 +1,7 @@
-import { writeFileSync } from 'fs'
+import { existsSync, readFileSync, write, writeFileSync } from 'fs'
 import { ensureDirSync } from 'fs-extra'
 import superagent from 'superagent'
+import yamljs from 'yamljs'
 
 class Service {
     public logs: string[] = [];
@@ -23,37 +24,48 @@ class Service {
     }
     log(content: string) { this.logs.push(content) }
 
-    async checkLoggedIn(): Promise<string> {
+    async getLoggedInUser(): Promise<string> {
         const { body: { UserContext } } = await this.get(`/`)
         const json = JSON.parse(UserContext)
         return json?.uname
     }
 
-    async getFiles(pid: string) {
-        const files = await this.get(`/p/${pid}/files`)
-        ensureDirSync(`data/${this.domainId}_${pid}`)
-        let tmp: string = files.body.pdoc.content
-        if (tmp.startsWith('{')) tmp = JSON.parse(tmp).zh
-        writeFileSync(`data/${this.domainId}_${pid}/problem.txt`, `# ${files.body.pdoc.title}\n\n${tmp}`)
-        return files.body.testdata.map((file: { name: string }) => file?.name)
+    async getProblemSummary(pid: string, target: string) {
+        const { body: { pdoc } } = await this.get(`/p/${pid}`)
+        const yaml = {
+            pid: pdoc.pid,
+            owner: pdoc.owner,
+            title: pdoc.title,
+            tag: pdoc.tag,
+            nSubmit: pdoc.nSubmit,
+            nAccept: pdoc.nAccept,
+        }
+        writeFileSync(`data/${target}/problem.yaml`, yamljs.stringify(yaml, 2))
+        let statement: string = pdoc.content
+        try { statement = Object.entries(JSON.parse(statement))[0][1] as string }
+        catch (e) { }
+        writeFileSync(`data/${target}/problem_zh.md`, statement)
     }
 
-    async getLinks(pid: string, files: string[]) {
+    async getFiles(pid: string) {
+        const { body } = await this.get(`/p/${pid}/files`)
+        return {
+            testdata: body.testdata.map((file: { name: string }) => file?.name),
+            additional_file: body.additional_file.map((file: { name: string }) => file?.name),
+        }
+    }
+
+    async getLinks(pid: string, files: string[], type: 'testdata' | 'additional_file') {
         const links = await this.post(`/p/${pid}/files`)
-            .send({
-                operation: "get_links",
-                type: "testdata",
-                files,
-            })
-        console.log(links.body.links)
+            .send({ operation: "get_links", type, files })
         return links.body.links
     }
 
-    async downloadFile(pid: string, filename: string, link: string) {
+    async downloadFile(link: string, target: string) {
         const response = await this.get(link, true)
         // writeFileSync(`/data/${this.domainId}_${pid}/${filename}`, response.body, 'binary')
-        writeFileSync(`data/${this.domainId}_${pid}/${filename}`, response.text)
-        console.log(`Downloaded File ${this.domainId}/${pid}/${filename}`)
+        writeFileSync(`data/${target}`, response.text)
+        console.log(`Downloaded File ${target}`)
     }
 
     async getProblemList(page: number) {
@@ -62,32 +74,45 @@ class Service {
     }
 }
 
+interface DownloadConfig {
+    oj_url: string
+    cookie_sid: string
+    domain: string
+    problem: {
+        pid: string
+        additional_files: boolean
+        testdata: boolean
+        statement: boolean
+    }[]
+}
+
+const config = JSON.parse(readFileSync('secret.json').toString()) as DownloadConfig
+
 const service = new Service(
-    'https://oj.hailiangedu.com',
-    'sid=',
-    'MainProblems',
+    config.oj_url,
+    `sid=${config.cookie_sid}`,
+    config.domain,
 )
 
 async function main() {
-    const username = await service.checkLoggedIn()
-    if (username === 'Guest') return console.log(`Not logged in`)
+    const username = await service.getLoggedInUser()
+    if (username === 'Guest') return console.error(`Not logged in`)
     console.log(`Logged in ${username}`)
-    const pid = 'P10003'
-    const files = await service.getFiles(pid)
-    const links = await service.getLinks(pid, files)
-    for (let [filename, link] of Object.entries(links))
-        await service.downloadFile(pid, filename, link as string)
-    // {
-    //     ensureDirSync('data/problem')
-    //     let list = ''
-    //     for (let page = 1; page <= 18; page++) {
-    //         const pdocs = await service.getProblemList(page)
-    //         list += pdocs.map((pdoc: Record<string, any>) => pdoc.pid
-    //             ? `${pdoc.pid} (${pdoc.docId}) ${pdoc.title}`
-    //             : `${pdoc.docId} ${pdoc.title}`).join('\n')
-    //     }
-    //     writeFileSync(`data/problem/${service.domainId}.txt`, list)
-    // }
+    for (let problem of config.problem) {
+        const { pid } = problem
+        console.log(`Downloading problem ${config.domain}/${pid}`)
+        const url_prefix = `${service.domainId}/${pid}`
+        ensureDirSync(`data/${url_prefix}/testdata`)
+        ensureDirSync(`data/${url_prefix}/additional_file`)
+        const { testdata, additional_file } = await service.getFiles(pid)
+        if (problem.statement) await service.getProblemSummary(pid, url_prefix)
+        const testdata_links = await service.getLinks(pid, testdata, 'testdata')
+        for (let [filename, link] of Object.entries(testdata_links))
+            await service.downloadFile(link as string, `${url_prefix}/testdata/${filename}`)
+        const additional_file_links = await service.getLinks(pid, additional_file, 'additional_file')
+        for (let [filename, link] of Object.entries(additional_file_links))
+            await service.downloadFile(link as string, `${url_prefix}/additional_file/${filename}`)
+    }
 }
 
 main()
