@@ -1,0 +1,20 @@
+{
+  "name": "hydrooj-problem-download",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {
+    "@types/fs-extra": "^11.0.3",
+    "@types/node": "^20.8.9",
+    "@types/superagent": "^4.1.20"
+  },
+  "dependencies": {
+    "fs-extra": "^11.1.1",
+    "superagent": "^8.1.2"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
