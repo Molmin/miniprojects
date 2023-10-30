@@ -2,6 +2,6 @@
   "name": "hydrooj-secondary-copy",
   "version": "1.0.0",
   "main": "index.ts",
-  "author": "Milmon",
+  "author": "Milmon <milmon@qq.com>",
   "license": "MIT"
 }

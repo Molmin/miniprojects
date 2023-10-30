@@ -2,5 +2,6 @@
   "name": "hydrooj-username",
   "version": "1.0.0",
   "main": "index.js",
+  "author": "Milmon <milmon@qq.com>",
   "license": "MIT"
 }
