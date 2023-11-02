@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from 'fs'
+import { createReadStream, createWriteStream, readFileSync, writeFileSync } from 'fs'
 import { ensureDirSync } from 'fs-extra'
 import superagent from 'superagent'
 import yamljs from 'yamljs'
@@ -10,15 +10,20 @@ class Service {
         public cookie: string,
         public domainId: string,
     ) { }
-    get(url: string, nodomain = false) {
+    get(url: string) {
         return superagent
-            .get(this.endPoint + (nodomain ? '' : '/d/' + this.domainId) + url)
+            .get(this.endPoint + '/d/' + this.domainId + url)
             .set('Cookie', this.cookie)
             .accept('application/json')
     }
-    post(url: string, nodomain = false) {
+    download(url: string) {
         return superagent
-            .post(this.endPoint + (nodomain ? '' : '/d/' + this.domainId) + url)
+            .get(this.endPoint + url)
+            .set('Cookie', this.cookie)
+    }
+    post(url: string) {
+        return superagent
+            .post(this.endPoint + '/d/' + this.domainId + url)
             .set('Cookie', this.cookie)
             .accept('application/json')
     }
@@ -63,9 +68,16 @@ class Service {
     }
 
     async downloadFile(link: string, target: string) {
-        const response = await this.get(link, true)
-        // writeFileSync(`/data/${this.domainId}_${pid}/${filename}`, response.body, 'binary')
-        writeFileSync(`data/${target}`, response.text)
+        const request = this.download(link)
+        // writeFileSync(`data/${target}`, response.text)
+        const stream = createWriteStream(`data/${target}`)
+        request.pipe(stream)
+        await new Promise((resolve, reject) => {
+            stream.on('finish', resolve);
+            stream.on('error', reject);
+            request.on('error', reject);
+            request.on('timeout', reject);
+        });
         console.log(`Downloaded File ${target}`)
     }
 
