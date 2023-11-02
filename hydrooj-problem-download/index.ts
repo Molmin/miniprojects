@@ -1,4 +1,4 @@
-import { createReadStream, createWriteStream, readFileSync, writeFileSync } from 'fs'
+import { createWriteStream, readFileSync, writeFileSync } from 'fs'
 import { ensureDirSync } from 'fs-extra'
 import superagent from 'superagent'
 import yamljs from 'yamljs'
