@@ -14,7 +14,8 @@ class TrainingScoreboardHandler extends Handler {
         if (this.user.hasPriv(PRIV.PRIV_USER_PROFILE)) {
             enrollUsers = (await TrainingModel.getMultiStatus(domainId, { docId: tid, uid: { $gt: 1 } })
                 .project({ uid: 1 }).limit(500).toArray()).map((x) => +x.uid)
-        } else uid = this.user._id
+        }
+        else uid = this.user._id
         const canViewHidden = this.user.hasPerm(PERM.PERM_VIEW_PROBLEM_HIDDEN) || this.user._id
         const [udoc, udict, pdict, psdict] = await Promise.all([
             UserModel.getById(domainId, tdoc.owner),
@@ -36,13 +37,14 @@ class TrainingScoreboardHandler extends Handler {
         })
         datas = await Promise.all(datas)
         enrollUsers.forEach((uid, uindex) => {
-            for (var pid in datas[uindex]) {
+            for (let pid in datas[uindex]) {
                 if (pid.includes('#') || !datas[uindex][pid].rid) continue
-                var record = datas[uindex][pid]
-                var i = 0 while (pids[i] != Number(pid)) i++
+                const record = datas[uindex][pid]
+                let i = 0
+                while (pids[i] != Number(pid)) i++
                 rows[uindex][i + 3] = {
                     type: 'record', score: Number(record.score),
-                    value: String(record.score), raw: record.rid
+                    value: String(record.score), raw: record.rid,
                 }
             }
             rows[uindex].forEach(record => {
@@ -51,7 +53,7 @@ class TrainingScoreboardHandler extends Handler {
             })
         })
         rows.sort((x, y) => y[2].value - x[2].value)
-        var lastScore = -1, rank = 1
+        let lastScore = -1, rank = 1
         rows.forEach((row, index) => {
             if (row[2].value != lastScore)
                 rank = index + 1, lastScore = row[2].value

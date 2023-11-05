@@ -1,6 +1,6 @@
 {
   "name": "hydrooj-training-scoreboard",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "main": "index.js",
   "author": "Milmon <milmon@qq.com>",
   "license": "GPL-3.0"
