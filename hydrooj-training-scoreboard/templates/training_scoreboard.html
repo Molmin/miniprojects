@@ -1,0 +1,18 @@
+{% import "components/paginator.html" as paginator with context %}
+{% extends "layout/basic.html" %}
+{{ set(UiContext, 'tdoc', tdoc) }}
+
+{% block content %}
+<div class="row"><div class="medium-12 columns scoreboard--homework">
+  <div class="section visible">
+    <div class="section__header" style="align: center">
+      <a href="{{ url('training_detail', tid=tdoc.docId) }}">
+        <h1 class="section__title">{{ tdoc.title }}</h1>
+      </a>
+    </div>
+    {% include "partials/training_scoreboard.html" %}
+  </div>
+</div></div>
+<script>$(document).ready(()=>{$('html').addClass('page--homework_scoreboard')});</script>
+{% endblock %}
+
