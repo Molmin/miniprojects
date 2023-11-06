@@ -164,6 +164,7 @@ async function main() {
                 const path = `data/${path_prefix}/testdata/${filename}`
                 return !progress[path]
             })
+            console.log(`Downloading total ${testdata.length} files`)
             const testdata_links = await service.getLinks(pid, testdata, 'testdata')
             for (let [filename, link] of Object.entries(testdata_links)) {
                 const path = `data/${path_prefix}/testdata/${filename}`
@@ -177,6 +178,7 @@ async function main() {
                 const path = `data/${path_prefix}/additional_file/${filename}`
                 return !progress[path]
             })
+            console.log(`Downloading total ${additional_file.length} files`)
             const additional_file_links = await service.getLinks(pid, additional_file, 'additional_file')
             for (let [filename, link] of Object.entries(additional_file_links)) {
                 const path = `data/${path_prefix}/additional_file/${filename}`
