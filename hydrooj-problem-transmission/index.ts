@@ -1,4 +1,7 @@
-import { createWriteStream, existsSync, readFileSync, readdirSync, writeFileSync } from 'fs'
+import {
+    createWriteStream, existsSync, readFileSync,
+    readdirSync, writeFileSync
+} from 'node:fs'
 import { ensureDirSync } from 'fs-extra'
 import superagent from 'superagent'
 import yamljs from 'yamljs'
@@ -214,4 +217,13 @@ async function main() {
     }
 }
 
-main()
+async function start() {
+    try { await main() }
+    catch (e) {
+        console.error(e)
+        console.log('Restarting script')
+        start()
+    }
+}
+
+start()
