@@ -1,4 +1,7 @@
-import { createWriteStream, readFile, readFileSync, readdirSync, writeFileSync } from 'fs'
+import {
+    createWriteStream, existsSync, readFileSync,
+    readdirSync, writeFileSync
+} from 'node:fs'
 import { ensureDirSync } from 'fs-extra'
 import superagent from 'superagent'
 import yamljs from 'yamljs'
@@ -138,6 +141,15 @@ const service = new Service(
     config.domain,
 )
 
+let progress: Record<string, boolean> = {}
+if (existsSync('data/progress.json'))
+    progress = JSON.parse(readFileSync('data/progress.json').toString())
+
+function setProgress(key: string, value: boolean) {
+    progress[key] = value
+    writeFileSync('data/progress.json', JSON.stringify(progress, null, '  '))
+}
+
 async function main() {
     const username = await service.getLoggedInUser()
     if (username === 'Guest') return console.error(`Not logged in`)
@@ -145,20 +157,38 @@ async function main() {
     for (let problem of config.download) {
         const { pid } = problem
         console.log(`Downloading problem ${config.domain}/${pid}`)
-        const url_prefix = `${service.domainId}/${pid}`
-        ensureDirSync(`data/${url_prefix}/testdata`)
-        ensureDirSync(`data/${url_prefix}/additional_file`)
-        const { testdata, additional_file } = await service.getFiles(pid)
-        if (problem.statement) await service.getProblemSummary(pid, url_prefix)
+        const path_prefix = `${service.domainId}/${pid}`
+        ensureDirSync(`data/${path_prefix}/testdata`)
+        ensureDirSync(`data/${path_prefix}/additional_file`)
+        let { testdata, additional_file } = await service.getFiles(pid)
+        if (problem.statement) await service.getProblemSummary(pid, path_prefix)
         if (problem.testdata) {
+            testdata = testdata.filter((filename: string) => {
+                const path = `data/${path_prefix}/testdata/${filename}`
+                return !progress[path]
+            })
+            console.log(`Downloading total ${testdata.length} files`)
             const testdata_links = await service.getLinks(pid, testdata, 'testdata')
-            for (let [filename, link] of Object.entries(testdata_links))
-                await service.downloadFile(link as string, `${url_prefix}/testdata/${filename}`)
+            for (let [filename, link] of Object.entries(testdata_links)) {
+                const path = `data/${path_prefix}/testdata/${filename}`
+                setProgress(path, false)
+                await service.downloadFile(link as string, `${path_prefix}/testdata/${filename}`)
+                setProgress(path, true)
+            }
         }
         if (problem.additional_file) {
+            additional_file = additional_file.filter((filename: string) => {
+                const path = `data/${path_prefix}/additional_file/${filename}`
+                return !progress[path]
+            })
+            console.log(`Downloading total ${additional_file.length} files`)
             const additional_file_links = await service.getLinks(pid, additional_file, 'additional_file')
-            for (let [filename, link] of Object.entries(additional_file_links))
-                await service.downloadFile(link as string, `${url_prefix}/additional_file/${filename}`)
+            for (let [filename, link] of Object.entries(additional_file_links)) {
+                const path = `data/${path_prefix}/additional_file/${filename}`
+                setProgress(path, false)
+                await service.downloadFile(link as string, `${path_prefix}/additional_file/${filename}`)
+                setProgress(path, true)
+            }
         }
     }
     for (let problem of config.upload) {
@@ -187,4 +217,13 @@ async function main() {
     }
 }
 
-main()
+async function start() {
+    try { await main() }
+    catch (e) {
+        console.error(e)
+        console.log('Restarting script')
+        start()
+    }
+}
+
+start()
