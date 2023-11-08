@@ -1,0 +1,35 @@
+name: Hydro Problem Check
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 0 1,11,21 * *'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out
+      uses: actions/checkout@v3
+    - name: Set up Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+    - name: Install And Build
+      run: |
+        cd hydrooj-problem-transmission
+        npm i
+        npm i ts-node -g
+        cd ..
+    - name: Init HydroOJ Secret
+      run: node scripts/checkProblems.js
+      env:
+        HYDRO_USERNAME: ${{ secrets.HYDRO_USERNAME }}
+        HYDRO_PASSWORD: ${{ secrets.HYDRO_PASSWORD }}
+    - name: Check Problems
+      run: |
+        cd hydrooj-problem-transmission
+        npm run check
+        cd ..

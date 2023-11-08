@@ -32,6 +32,20 @@ export default class HydroAccountService {
         return json?.uname
     }
 
+    async listProblems(): Promise<string[]> {
+        let countPages = 1, list: string[] = []
+        for (let page = 1; page <= countPages; page++) {
+            console.log(`Getting page ${page} / ${countPages}`)
+            let { body: { ppcount, pdocs } } = await this
+                .get('/p').query({ page })
+            countPages = ppcount
+            pdocs = pdocs.filter((pdoc: { hidden: boolean }) => !pdoc.hidden)
+            pdocs = pdocs.map((pdoc: { pid: string }) => pdoc.pid) as string[]
+            list = list.concat(pdocs)
+        }
+        return list
+    }
+
     existsProblem(pid: string): Promise<boolean> {
         return new Promise((resolve, reject) =>
             this.get(`/p/${pid}`)
@@ -59,6 +73,19 @@ export default class HydroAccountService {
         catch (e) { }
         writeFileSync(`data/${target}/problem_zh.md`, statement)
         console.log(`Saved Problem Summary`)
+    }
+
+    async getProblemTitle(pid: string): Promise<string> {
+        const { body: { pdoc } } = await this.get(`/p/${pid}`)
+        return pdoc.title
+    }
+
+    async getProblemStatement(pid: string): Promise<Record<string, string>> {
+        const { body: { pdoc } } = await this.get(`/p/${pid}`)
+        let statement = pdoc.content
+        try { statement = JSON.parse(statement) }
+        catch (e) { statement = { zh: statement } }
+        return statement
     }
 
     async createProblem(pid: string, path: string) {
