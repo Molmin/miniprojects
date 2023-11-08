@@ -15,7 +15,7 @@
     "yamljs": "^0.3.0"
   },
   "scripts": {
-    "start": "npx ts-node transmission.ts"
+    "start": "npx ts-node src/transmission.ts"
   },
   "author": "Milmon <milmon@qq.com>",
   "license": "GPL-3.0"

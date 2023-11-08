@@ -3,8 +3,8 @@ import {
     writeFileSync,
 } from 'node:fs'
 import { ensureDirSync } from 'fs-extra'
-import HydroAccountService from './service'
-import { SecretConfig } from './secret'
+import HydroAccountService from './basic/service'
+import { SecretConfig } from './basic/secret'
 
 interface TransmissionConfig {
     download: string[]
@@ -40,7 +40,7 @@ function setProgress(key: string, value: boolean) {
 async function main() {
     const username = await service.getLoggedInUser()
     if (username === 'Guest') return console.error(`Not logged in`)
-    console.log(`Logged in ${username}`)
+    console.log(`Logged in as user ${username}`)
     for (let pid of config.download) {
         console.log(`Downloading problem ${secret.domain}/${pid}`)
         const path_prefix = `${service.domainId}/${pid}`
