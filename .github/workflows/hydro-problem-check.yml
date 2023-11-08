@@ -24,7 +24,7 @@ jobs:
         npm i ts-node -g
         cd ..
     - name: Init HydroOJ Secret
-      run: node scripts/checkProblems.js
+      run: node scripts/checkProblems.mjs
       env:
         HYDRO_USERNAME: ${{ secrets.HYDRO_USERNAME }}
         HYDRO_PASSWORD: ${{ secrets.HYDRO_PASSWORD }}
