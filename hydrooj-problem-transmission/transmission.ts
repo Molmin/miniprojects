@@ -9,12 +9,7 @@ interface DownloadConfig {
     oj_url: string
     cookie_sid: string
     domain: string
-    download: {
-        pid: string
-        additional_file: boolean
-        testdata: boolean
-        statement: boolean
-    }[]
+    download: string[]
     upload: {
         pid: string
         path: string
@@ -42,41 +37,38 @@ async function main() {
     const username = await service.getLoggedInUser()
     if (username === 'Guest') return console.error(`Not logged in`)
     console.log(`Logged in ${username}`)
-    for (let problem of config.download) {
-        const { pid } = problem
+    for (let pid of config.download) {
         console.log(`Downloading problem ${config.domain}/${pid}`)
         const path_prefix = `${service.domainId}/${pid}`
         ensureDirSync(`data/${path_prefix}/testdata`)
         ensureDirSync(`data/${path_prefix}/additional_file`)
         let { testdata, additional_file } = await service.getFiles(pid)
-        if (problem.statement) await service.getProblemSummary(pid, path_prefix)
-        if (problem.testdata) {
-            testdata = testdata.filter((filename: string) => {
-                const path = `data/${path_prefix}/testdata/${filename}`
-                return !progress[path]
-            })
-            console.log(`Downloading total ${testdata.length} files`)
-            const testdata_links = await service.getLinks(pid, testdata, 'testdata')
-            for (let [filename, link] of Object.entries(testdata_links)) {
-                const path = `data/${path_prefix}/testdata/${filename}`
-                setProgress(path, false)
-                await service.downloadFile(link as string, `${path_prefix}/testdata/${filename}`)
-                setProgress(path, true)
-            }
+        await service.getProblemSummary(pid, path_prefix)
+        
+        testdata = testdata.filter((filename: string) => {
+            const path = `data/${path_prefix}/testdata/${filename}`
+            return !progress[path]
+        })
+        console.log(`Downloading total ${testdata.length} files`)
+        const testdata_links = await service.getLinks(pid, testdata, 'testdata')
+        for (let [filename, link] of Object.entries(testdata_links)) {
+            const path = `data/${path_prefix}/testdata/${filename}`
+            setProgress(path, false)
+            await service.downloadFile(link as string, `${path_prefix}/testdata/${filename}`)
+            setProgress(path, true)
         }
-        if (problem.additional_file) {
-            additional_file = additional_file.filter((filename: string) => {
-                const path = `data/${path_prefix}/additional_file/${filename}`
-                return !progress[path]
-            })
-            console.log(`Downloading total ${additional_file.length} files`)
-            const additional_file_links = await service.getLinks(pid, additional_file, 'additional_file')
-            for (let [filename, link] of Object.entries(additional_file_links)) {
-                const path = `data/${path_prefix}/additional_file/${filename}`
-                setProgress(path, false)
-                await service.downloadFile(link as string, `${path_prefix}/additional_file/${filename}`)
-                setProgress(path, true)
-            }
+
+        additional_file = additional_file.filter((filename: string) => {
+            const path = `data/${path_prefix}/additional_file/${filename}`
+            return !progress[path]
+        })
+        console.log(`Downloading total ${additional_file.length} files`)
+        const additional_file_links = await service.getLinks(pid, additional_file, 'additional_file')
+        for (let [filename, link] of Object.entries(additional_file_links)) {
+            const path = `data/${path_prefix}/additional_file/${filename}`
+            setProgress(path, false)
+            await service.downloadFile(link as string, `${path_prefix}/additional_file/${filename}`)
+            setProgress(path, true)
         }
     }
     for (let problem of config.upload) {

@@ -10,12 +10,7 @@ HydroOJ 前端传输题目时常常会出现文件过大网络中断等问题，
     "cookie_sid": "<cookie>",
     "domain": "<domain>",
     "download": [
-        {
-            "pid": "<pid>",
-            "additional_file": true,
-            "testdata": true,
-            "statement": true
-        }
+        "<pid>"
     ],
     "upload": [
         {
@@ -30,10 +25,7 @@ HydroOJ 前端传输题目时常常会出现文件过大网络中断等问题，
 
 `domain` 表示域 ID，系统域为 `system`；
 
-`download` 传入一个数组，每项表示一个下载任务，包含四个值：
-
-- `pid` 表示题目 ID，可以是数字编号，也可以是字符串编号，但传入时统一用引号包裹；
-- 剩余三项分别表示是否下载附加文件、测试数据、题面及配置，一般用于更新数据的三者之一时使用。
+`download` 传入一个数组，每项表示一个下载任务的题号；
 
 `upload` 传入一个数组，每项表示一个上传任务，包含四个值：
 
