@@ -7,15 +7,23 @@ HydroOJ 前端传输题目时常常会出现文件过大网络中断等问题，
 ```json
 {
     "oj_url": "https://hydro.ac",
-    "cookie_sid": "<cookie>",
-    "domain": "<domain>",
+    "cookie_sid": "<cookie_sid>",
+    "domain": "<domain>"
+}
+```
+
+其中 `cookie_sid` 表示你的 Cookie 中的 sid 项；
+
+`domain` 表示域 ID，系统域为 `system`。
+
+### 上传下载任务
+
+创建文件 `job.json` 如下：
+
+```json
+{
     "download": [
-        {
-            "pid": "<pid>",
-            "additional_file": true,
-            "testdata": true,
-            "statement": true
-        }
+        "<pid>"
     ],
     "upload": [
         {
@@ -26,25 +34,20 @@ HydroOJ 前端传输题目时常常会出现文件过大网络中断等问题，
 }
 ```
 
-其中 `cookie_sid` 表示你的 Cookie 中的 sid 项；
-
-`domain` 表示域 ID，系统域为 `system`；
-
-`download` 传入一个数组，每项表示一个下载任务，包含四个值：
-
-- `pid` 表示题目 ID，可以是数字编号，也可以是字符串编号，但传入时统一用引号包裹；
-- 剩余三项分别表示是否下载附加文件、测试数据、题面及配置，一般用于更新数据的三者之一时使用。
+`download` 传入一个数组，每项表示一个下载任务的题号；
 
 `upload` 传入一个数组，每项表示一个上传任务，包含四个值：
 
 - `pid` 表示目标题目 ID，可以是数字编号，也可以是字符串编号，但传入时统一用引号包裹；
 - `path` 表示本地题目文件夹，压缩包请自行解压，例如 `data/system/P1001`。
 
+## 启动脚本
+
 使用如下指令启动程序（请务必保证配置正确）：
 
 ```shell
 npm i
-npx ts-node index.ts
+npm start [job.json] [secret.json]          # 启动上传 / 下载任务
 ```
 
 注意：本工具没有很好地检测输入内容或文件是否合法，请自行检查。

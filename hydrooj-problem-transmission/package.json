@@ -1,9 +1,8 @@
 {
   "name": "hydrooj-problem-transmission",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "",
   "main": "index.ts",
-  "type": "module",
   "devDependencies": {
     "@types/fs-extra": "^11.0.3",
     "@types/node": "^20.8.9",
@@ -16,7 +15,8 @@
     "yamljs": "^0.3.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npx ts-node src/transmission.ts",
+    "check": "npx ts-node src/check.ts"
   },
   "author": "Milmon <milmon@qq.com>",
   "license": "GPL-3.0"
