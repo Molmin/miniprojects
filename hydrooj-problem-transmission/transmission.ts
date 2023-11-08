@@ -21,7 +21,7 @@ interface DownloadConfig {
     }[]
 }
 
-const config = JSON.parse(readFileSync('secret.json').toString()) as DownloadConfig
+const config = JSON.parse(readFileSync(process.argv[2] || 'secret.json').toString()) as DownloadConfig
 
 const service = new HydroAccountService(
     config.oj_url,
