@@ -57,13 +57,9 @@ function checkStatement(content: string) {
                     throwError(message)
                     continue
                 }
-                const sampleId = result[1].substring(folder.length, result[1].length - 3)
-                if (!/^[0-9][1-9]*$/.test(sampleId)) {
-                    throwError(message)
-                    continue
-                }
-                const id = +sampleId
+                const id = result[1].substring(folder.length, result[1].length - 3)
                 if (
+                    !/^[0-9][1-9]*$/.test(id) ||
                     result[1] !== `${folder}${id}.in` ||
                     result[2] !== `${englishName}${id}.in` ||
                     result[3] !== `${folder}${id}.ans` ||
