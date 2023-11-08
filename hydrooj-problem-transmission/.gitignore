@@ -1,4 +1,7 @@
 node_modules
 package-lock.json
 data
+secret.json
 secret*.json
+job.json
+job*.json

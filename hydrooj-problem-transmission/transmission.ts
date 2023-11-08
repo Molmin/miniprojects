@@ -4,11 +4,9 @@ import {
 } from 'node:fs'
 import { ensureDirSync } from 'fs-extra'
 import HydroAccountService from './service'
+import { SecretConfig } from './secret'
 
-interface DownloadConfig {
-    oj_url: string
-    cookie_sid: string
-    domain: string
+interface TransmissionConfig {
     download: string[]
     upload: {
         pid: string
@@ -16,12 +14,18 @@ interface DownloadConfig {
     }[]
 }
 
-const config = JSON.parse(readFileSync(process.argv[2] || 'secret.json').toString()) as DownloadConfig
+console.log({
+    JobConfigFile: process.argv[2] || 'job.json',
+    SecretConfigFile: process.argv[3] || 'secret.json',
+})
+
+const config = JSON.parse(readFileSync(process.argv[2] || 'job.json').toString()) as TransmissionConfig
+const secret = JSON.parse(readFileSync(process.argv[3] || 'secret.json').toString()) as SecretConfig
 
 const service = new HydroAccountService(
-    config.oj_url,
-    `sid=${config.cookie_sid}`,
-    config.domain,
+    secret.oj_url,
+    `sid=${secret.cookie_sid}`,
+    secret.domain,
 )
 
 let progress: Record<string, boolean> = {}
@@ -38,13 +42,13 @@ async function main() {
     if (username === 'Guest') return console.error(`Not logged in`)
     console.log(`Logged in ${username}`)
     for (let pid of config.download) {
-        console.log(`Downloading problem ${config.domain}/${pid}`)
+        console.log(`Downloading problem ${secret.domain}/${pid}`)
         const path_prefix = `${service.domainId}/${pid}`
         ensureDirSync(`data/${path_prefix}/testdata`)
         ensureDirSync(`data/${path_prefix}/additional_file`)
         let { testdata, additional_file } = await service.getFiles(pid)
         await service.getProblemSummary(pid, path_prefix)
-        
+
         testdata = testdata.filter((filename: string) => {
             const path = `data/${path_prefix}/testdata/${filename}`
             return !progress[path]
@@ -74,7 +78,7 @@ async function main() {
     for (let problem of config.upload) {
         const { path } = problem
         let pid = problem.pid
-        console.log(`Uploading problem ${config.domain}/${pid}`)
+        console.log(`Uploading problem ${secret.domain}/${pid}`)
         if (!await service.existsProblem(pid))
             pid = await service.createProblem(pid, path)
         const testdata = readdirSync(`${path}/testdata`)
