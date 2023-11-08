@@ -31,6 +31,13 @@ export default class HydroAccountService {
         const json = JSON.parse(UserContext)
         return json?.uname
     }
+    async login(uname: string, password: string) {
+        console.log('Try login')
+        const response = await this
+            .post('/login')
+            .send({ uname, password })
+        this.cookie = response.header['set-cookie'].join('; ')
+    }
 
     async listProblems(): Promise<string[]> {
         let countPages = 1, list: string[] = []

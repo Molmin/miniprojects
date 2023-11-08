@@ -10,7 +10,7 @@ const secret = JSON.parse(readFileSync(process.argv[3] || 'secret.json').toStrin
 
 const service = new HydroAccountService(
     secret.oj_url,
-    `sid=${secret.cookie_sid}`,
+    secret.cookie_sid ? `sid=${secret.cookie_sid}` : '',
     secret.domain,
 )
 
@@ -57,9 +57,19 @@ function checkStatement(content: string) {
     }
 }
 
+let threwError = false
+
 async function main() {
+    if (!secret.cookie_sid) await service.login(
+        secret.username as string,
+        secret.password as string,
+    )
     const username = await service.getLoggedInUser()
-    if (username === 'Guest') return console.error(`Not logged in`)
+    if (username === 'Guest') {
+        console.error(`Not logged in`)
+        threwError = true
+        throw new Error(`Not logged in.`)
+    }
     console.log(`Logged in as user ${username}`)
     const pids = await service.listProblems()
     for (let pid of pids) {
@@ -76,7 +86,18 @@ async function main() {
         for (let [, content] of Object.entries(statement))
             checkStatement(content as string)
     }
-    if (totalError > 0) throw new Error(`Found ${totalError} errors.`)
+    if (totalError > 0) {
+        threwError = true
+        throw new Error(`Found ${totalError} errors.`)
+    }
 }
 
-main()
+async function start() {
+    try { await main() }
+    catch (e) {
+        if (threwError && process.env.GITHUB_ACTION_ID) throw e
+        else throw new Error('Unknown error.')
+    }
+}
+
+start()
