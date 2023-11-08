@@ -33,5 +33,3 @@ jobs:
         cd hydrooj-problem-transmission
         npm run check
         cd ..
-      env:
-        GITHUB_ACTION_ID: 1

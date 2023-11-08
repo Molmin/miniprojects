@@ -46,11 +46,29 @@ function checkStatement(content: string) {
                 throwError(`"${block}" is not a valid code block`)
             continue
         }
-        if (/^见/.test(block)) {
+        if (/^见选手目录/.test(block)) {
+            const message = `"${block}" is not a valid big sample description`
             if (!/^见选手目录下的 \[`.+?`\]\(file:\/\/.+?\) 和 \[`.+?`\]\(file:\/\/.+?\)。$/.test(block))
-                throwError(`"${block}" is not a valid big sample description`)
+                throwError(message)
             else {
-                console.log(block)
+                const result = /^见选手目录下的 \[`(.+?)`\]\(file:\/\/(.+?)\) 和 \[`(.+?)`\]\(file:\/\/(.+?)\)。$/.exec(block) as string[]
+                const folder = `${englishName}/${englishName}`
+                if (!result[1].startsWith(folder) || !result[1].endsWith('.in')) {
+                    throwError(message)
+                    continue
+                }
+                const sampleId = result[1].substring(folder.length, result[1].length - 3)
+                if (!/^[0-9][1-9]*$/.test(sampleId)) {
+                    throwError(message)
+                    continue
+                }
+                const id = +sampleId
+                if (
+                    result[1] !== `${folder}${id}.in` ||
+                    result[2] !== `${englishName}${id}.in` ||
+                    result[3] !== `${folder}${id}.ans` ||
+                    result[4] !== `${englishName}${id}.ans`
+                ) throwError(message)
             }
             continue
         }
@@ -92,12 +110,4 @@ async function main() {
     }
 }
 
-async function start() {
-    try { await main() }
-    catch (e) {
-        if (threwError && process.env.GITHUB_ACTION_ID) throw e
-        else throw new Error('Unknown error.')
-    }
-}
-
-start()
+main()
