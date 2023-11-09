@@ -89,26 +89,20 @@ async function main() {
         const additional_file = readdirSync(`${path}/additional_file`)
         let files = await service.getFiles(pid)
         for (let file of testdata) {
-            if (files.testdata.includes(file)) continue
-            files = await service.uploadFile(
-                pid, 'testdata',
-                renameFunc(file, 'testdata'),
-                `${path}/testdata/${file}`,
-            )
-            if (files.testdata.includes(file))
-                console.log(`Successfully uploaded file ${file}`)
-            else console.log(`Failed to upload file ${file}`)
+            const filename = renameFunc(file, 'testdata')
+            if (files.testdata.includes(filename)) continue
+            files = await service.uploadFile(pid, 'testdata', filename, `${path}/testdata/${file}`)
+            if (files.testdata.includes(filename))
+                console.log(`Successfully uploaded file ${filename}`)
+            else console.log(`Failed to upload file ${filename}`)
         }
         for (let file of additional_file) {
-            if (files.additional_file.includes(file)) continue
-            files = await service.uploadFile(
-                pid, 'additional_file',
-                renameFunc(file, 'additional_file'),
-                `${path}/additional_file/${file}`,
-            )
-            if (files.additional_file.includes(file))
-                console.log(`Successfully uploaded file ${file}`)
-            else console.log(`Failed to upload file ${file}`)
+            const filename = renameFunc(file, 'additional_file')
+            if (files.additional_file.includes(filename)) continue
+            files = await service.uploadFile(pid, 'additional_file', filename, `${path}/additional_file/${file}`)
+            if (files.additional_file.includes(filename))
+                console.log(`Successfully uploaded file ${filename}`)
+            else console.log(`Failed to upload file ${filename}`)
         }
     }
 }
