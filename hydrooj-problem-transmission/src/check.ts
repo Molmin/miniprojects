@@ -107,10 +107,10 @@ function checkJudgeConfig(config: JudgeConfig) {
         for (let testcase of subtask.cases) {
             testdata.push(testcase.input)
             testdata.push(testcase.output)
-            if (getFileType(testcase.input) !== 'in')
-                throwError(`Input file "${testcase.input}" is not ends with .in.`)
-            if (getFileType(testcase.output) !== 'ans')
-                throwError(`Input file "${testcase.output}" is not ends with .ans.`)
+            if (/^[a-z]*?[\d\-]+?\.in$/.test(testcase.input))
+                throwError(`Input file "${testcase.input}" is not a valid name.`)
+            if (/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.input))
+                throwError(`Input file "${testcase.output}" is not a valid name.`)
         }
     }
     if (config.checker) {
