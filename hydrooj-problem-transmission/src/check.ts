@@ -109,8 +109,8 @@ function checkJudgeConfig(config: JudgeConfig) {
             testdata.push(testcase.output)
             if (/^[a-z]*?[\d\-]+?\.in$/.test(testcase.input))
                 throwError(`Input file "${testcase.input}" is not a valid name.`)
-            if (/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.input))
-                throwError(`Input file "${testcase.output}" is not a valid name.`)
+            if (/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.output))
+                throwError(`Output file "${testcase.output}" is not a valid name.`)
         }
     }
     if (config.checker) {
