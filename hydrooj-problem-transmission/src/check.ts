@@ -46,7 +46,7 @@ let maxSampleId = 0
 
 function throwError(content: string) {
     totalError++
-    console.log(`${nowpid}: ${content}`)
+    console.error(`Error: ${nowpid}: ${content}`)
 }
 
 function checkStatement(content: string) {
@@ -96,6 +96,10 @@ function checkStatement(content: string) {
             }
             continue
         }
+        const AdditionalFileMatcher = /\[.*?\]\(file\:\/\/(.+?)( .+?)?\)/g
+        let file
+        while (file = AdditionalFileMatcher.exec(block))
+            additional_file.push(file[1])
     }
     for (let i = 1; i <= maxSampleId; i++) {
         additional_file.push(`${englishName}${i}.in`)
@@ -106,12 +110,16 @@ function checkStatement(content: string) {
 function checkJudgeConfig(config: JudgeConfig) {
     for (let subtask of config.subtasks) {
         for (let testcase of subtask.cases) {
-            testdata.push(testcase.input)
-            testdata.push(testcase.output)
-            if (!/^[a-z]*?[\d\-]+?\.in$/.test(testcase.input) || !testcase.input.startsWith(englishName))
-                throwError(`Input file "${testcase.input}" is not a valid name.`)
-            if (!/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.output) || !testcase.output.startsWith(englishName))
-                throwError(`Output file "${testcase.output}" is not a valid name.`)
+            if (testcase.input !== '/dev/null') {
+                testdata.push(testcase.input)
+                if (!/^[a-z]*?[\d\-]+?\.in$/.test(testcase.input) || !testcase.input.startsWith(englishName))
+                    throwError(`Input file "${testcase.input}" is not a valid name.`)
+            }
+            if (testcase.output !== '/dev/null') {
+                testdata.push(testcase.output)
+                if (!/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.output) || !testcase.output.startsWith(englishName))
+                    throwError(`Output file "${testcase.output}" is not a valid name.`)
+            }
         }
     }
     if (config.checker) {
