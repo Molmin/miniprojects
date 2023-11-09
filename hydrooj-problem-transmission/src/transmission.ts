@@ -37,6 +37,10 @@ function setProgress(key: string, value: boolean) {
     writeFileSync('data/progress.json', JSON.stringify(progress, null, '  '))
 }
 
+function renameFunc(filename: string, type: 'testdata' | 'additional_file') {
+    return filename
+}
+
 async function main() {
     const username = await service.getLoggedInUser()
     if (username === 'Guest') return console.error(`Not logged in`)
@@ -86,14 +90,22 @@ async function main() {
         let files = await service.getFiles(pid)
         for (let file of testdata) {
             if (files.testdata.includes(file)) continue
-            files = await service.uploadFile(pid, 'testdata', file, `${path}/testdata/${file}`)
+            files = await service.uploadFile(
+                pid, 'testdata',
+                renameFunc(file, 'testdata'),
+                `${path}/testdata/${file}`,
+            )
             if (files.testdata.includes(file))
                 console.log(`Successfully uploaded file ${file}`)
             else console.log(`Failed to upload file ${file}`)
         }
         for (let file of additional_file) {
             if (files.additional_file.includes(file)) continue
-            files = await service.uploadFile(pid, 'additional_file', file, `${path}/additional_file/${file}`)
+            files = await service.uploadFile(
+                pid, 'additional_file',
+                renameFunc(file, 'additional_file'),
+                `${path}/additional_file/${file}`,
+            )
             if (files.additional_file.includes(file))
                 console.log(`Successfully uploaded file ${file}`)
             else console.log(`Failed to upload file ${file}`)

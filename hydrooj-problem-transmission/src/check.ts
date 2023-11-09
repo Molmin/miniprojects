@@ -100,16 +100,13 @@ function checkStatement(content: string) {
 }
 
 function checkJudgeConfig(config: JudgeConfig) {
-    function getFileType(filename: string) {
-        return filename.split('.').pop()
-    }
     for (let subtask of config.subtasks) {
         for (let testcase of subtask.cases) {
             testdata.push(testcase.input)
             testdata.push(testcase.output)
-            if (/^[a-z]*?[\d\-]+?\.in$/.test(testcase.input))
+            if (!/^[a-z]*?[\d\-]+?\.in$/.test(testcase.input))
                 throwError(`Input file "${testcase.input}" is not a valid name.`)
-            if (/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.output))
+            if (!/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.output))
                 throwError(`Output file "${testcase.output}" is not a valid name.`)
         }
     }
