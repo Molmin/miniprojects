@@ -22,6 +22,10 @@ interface JudgeConfig {
     subtasks: SubtaskConfig[]
 }
 
+const ALLOW_EXTRA_TESTDATA = [
+    ...['py', 'cc', 'js', 'mjs', 'ts'].map((ext: string) => `generator.${ext}`)
+]
+
 console.log({
     SecretConfigFile: process.argv[2] || 'secret.json',
 })
@@ -164,7 +168,7 @@ async function main() {
             if (!files.additional_file.includes(file))
                 throwError(`File "${file}" can not found in additional file.`)
         for (let file of files.testdata)
-            if (!testdata.includes(file))
+            if (!testdata.includes(file) && !ALLOW_EXTRA_TESTDATA.includes(file))
                 throwError(`Testdata "${file}" is not required.`)
         for (let file of files.additional_file)
             if (!additional_file.includes(file))
