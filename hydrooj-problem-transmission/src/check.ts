@@ -1,6 +1,26 @@
 import { readFileSync } from 'node:fs'
+import { ensureDirSync } from 'fs-extra'
 import HydroAccountService from './basic/service'
 import { SecretConfig } from './basic/secret'
+
+interface SubtaskConfig {
+    id: number
+    if: number[]
+    score: number
+    type: 'sum' | 'min' | 'max'
+    cases: {
+        input: string
+        output: string
+    }[]
+}
+
+interface JudgeConfig {
+    type: 'default'
+    time?: string
+    memory?: string
+    checker?: string
+    subtasks: SubtaskConfig[]
+}
 
 console.log({
     SecretConfigFile: process.argv[2] || 'secret.json',
@@ -16,6 +36,9 @@ const service = new HydroAccountService(
 
 let totalError = 0
 let nowpid: string = '', englishName: string = ''
+let additional_file: string[] = []
+let testdata: string[] = []
+let maxSampleId = 0
 
 function throwError(content: string) {
     totalError++
@@ -65,9 +88,35 @@ function checkStatement(content: string) {
                     result[3] !== `${folder}${id}.ans` ||
                     result[4] !== `${englishName}${id}.ans`
                 ) throwError(message)
+                else maxSampleId = Math.max(maxSampleId, +id)
             }
             continue
         }
+    }
+    for (let i = 1; i <= maxSampleId; i++) {
+        additional_file.push(`${englishName}${i}.in`)
+        additional_file.push(`${englishName}${i}.ans`)
+    }
+}
+
+function checkJudgeConfig(config: JudgeConfig) {
+    function getFileType(filename: string) {
+        return filename.split('.').pop()
+    }
+    for (let subtask of config.subtasks) {
+        for (let testcase of subtask.cases) {
+            testdata.push(testcase.input)
+            testdata.push(testcase.output)
+            if (getFileType(testcase.input) !== 'in')
+                throwError(`Input file "${testcase.input}" is not ends with .in.`)
+            if (getFileType(testcase.output) !== 'ans')
+                throwError(`Input file "${testcase.output}" is not ends with .ans.`)
+        }
+    }
+    if (config.checker) {
+        if (config.checker !== 'checker.cc')
+            throwError(`Checker file must be 'checker.cc'.`)
+        testdata.push(config.checker)
     }
 }
 
@@ -85,9 +134,13 @@ async function main() {
         throw new Error(`Not logged in.`)
     }
     console.log(`Logged in as user ${username}`)
+    ensureDirSync('data/tmp')
     const pids = await service.listProblems()
     for (let pid of pids) {
         nowpid = pid
+        maxSampleId = 0
+        testdata = ['config.yaml']
+        additional_file = []
         const title = await service.getProblemTitle(pid)
         if (!/^.+?（[a-z]+?）$/.test(title)) {
             throwError(`"${title}" is not a valid problem title`)
@@ -99,6 +152,26 @@ async function main() {
         const statement = await service.getProblemStatement(pid)
         for (let [, content] of Object.entries(statement))
             checkStatement(content as string)
+        const files = await service.getFiles(pid)
+        if (!files.testdata.includes('config.yaml')) {
+            throwError('No judge config file found.')
+            continue
+        }
+        console.log(`Checking judge config`)
+        const config = await service.getJudgeConfig(pid)
+        checkJudgeConfig(config)
+        for (let file of testdata)
+            if (!files.testdata.includes(file))
+                throwError(`File "${file}" can not found in testdata.`)
+        for (let file of additional_file)
+            if (!files.additional_file.includes(file))
+                throwError(`File "${file}" can not found in additional file.`)
+        for (let file of files.testdata)
+            if (!testdata.includes(file))
+                throwError(`Testdata "${file}" is not required.`)
+        for (let file of files.additional_file)
+            if (!additional_file.includes(file))
+                throwError(`Additional file "${file}" is not required.`)
     }
     if (totalError > 0) {
         threwError = true
