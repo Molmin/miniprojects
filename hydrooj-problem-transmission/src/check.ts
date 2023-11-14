@@ -43,6 +43,7 @@ let nowpid: string = '', englishName: string = ''
 let additional_file: string[] = []
 let testdata: string[] = []
 let maxSampleId = 0
+let sampleInputId: number[] = [], sampleOutputId: number[] = []
 
 function throwError(content: string) {
     totalError++
@@ -63,6 +64,7 @@ function checkStatement(content: string) {
                 /^## 样例 [1-9][0-9]*$/.test(block) ||
                 /^## 样例 [1-9][0-9]*? 解释$/.test(block) ||
                 /^## 数据范围$/.test(block) ||
+                /^## 评分方式$/.test(block) ||
                 /^## 数据范围与评分方式$/.test(block) ||
                 /^## 子任务$/.test(block)
             )) throwError(`"${block}" is not a valid title`)
@@ -71,6 +73,21 @@ function checkStatement(content: string) {
         if (block.startsWith('```')) {
             if (!block.startsWith('```') || !block.endsWith('```'))
                 throwError(`"${block}" is not a valid code block`)
+            else {
+                const lang = block.split('\n')[0].split('|')[0].replace('```', '')
+                if (/^input\d+$/.test(lang)) {
+                    const id = lang.replace('input', '')
+                    sampleInputId.push(+id)
+                    additional_file.push(`${englishName}${id}.in`)
+                    maxSampleId = Math.max(maxSampleId, +id)
+                }
+                if (/^output\d+$/.test(lang)) {
+                    const id = lang.replace('output', '')
+                    sampleOutputId.push(+id)
+                    additional_file.push(`${englishName}${id}.ans`)
+                    maxSampleId = Math.max(maxSampleId, +id)
+                }
+            }
             continue
         }
         if (/^见选手目录/.test(block)) {
@@ -92,7 +109,13 @@ function checkStatement(content: string) {
                     result[3] !== `${folder}${id}.ans` ||
                     result[4] !== `${englishName}${id}.ans`
                 ) throwError(message)
-                else maxSampleId = Math.max(maxSampleId, +id)
+                else {
+                    maxSampleId = Math.max(maxSampleId, +id)
+                    sampleInputId.push(+id)
+                    sampleOutputId.push(+id)
+                    additional_file.push(`${englishName}${id}.in`)
+                    additional_file.push(`${englishName}${id}.ans`)
+                }
             }
             continue
         }
@@ -101,10 +124,17 @@ function checkStatement(content: string) {
         while (file = AdditionalFileMatcher.exec(block))
             additional_file.push(file[1])
     }
-    for (let i = 1; i <= maxSampleId; i++) {
-        additional_file.push(`${englishName}${i}.in`)
-        additional_file.push(`${englishName}${i}.ans`)
+    let flag = false
+    for (let sampleId = 1; sampleId <= maxSampleId; sampleId++) {
+        if (sampleInputId[sampleId - 1] !== sampleId) flag = true
+        if (sampleOutputId[sampleId - 1] !== sampleId) flag = true
     }
+    if (flag) throwError(`Unknown error in samples.`)
+    let command
+    const CommandMatcher = /<!-- PROBLEM_FORMAT_CHECKER: (.+?) -->/g
+    while (command = CommandMatcher.exec(content))
+        if (command[1].startsWith('extra_additional_file: '))
+            additional_file.push(command[1].replace('extra_additional_file: ', ''))
 }
 
 function checkJudgeConfig(config: JudgeConfig) {
@@ -129,7 +159,6 @@ function checkJudgeConfig(config: JudgeConfig) {
     }
 }
 
-let threwError = false
 
 async function main() {
     if (!secret.cookie_sid) await service.login(
@@ -139,7 +168,6 @@ async function main() {
     const username = await service.getLoggedInUser()
     if (username === 'Guest') {
         console.error(`Not logged in`)
-        threwError = true
         throw new Error(`Not logged in.`)
     }
     console.log(`Logged in as user ${username}`)
@@ -150,6 +178,8 @@ async function main() {
         maxSampleId = 0
         testdata = ['config.yaml']
         additional_file = []
+        sampleInputId = []
+        sampleOutputId = []
         const title = await service.getProblemTitle(pid)
         if (!/^.+?（[a-z]+?）$/.test(title)) {
             throwError(`"${title}" is not a valid problem title`)
@@ -182,10 +212,7 @@ async function main() {
             if (!additional_file.includes(file))
                 throwError(`Additional file "${file}" is not required.`)
     }
-    if (totalError > 0) {
-        threwError = true
-        throw new Error(`Found ${totalError} errors.`)
-    }
+    if (totalError > 0) throw new Error(`Found ${totalError} errors.`)
 }
 
 main()
