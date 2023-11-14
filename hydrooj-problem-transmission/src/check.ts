@@ -44,6 +44,12 @@ let additional_file: string[] = []
 let testdata: string[] = []
 let maxSampleId = 0
 let sampleInputId: number[] = [], sampleOutputId: number[] = []
+let additional_file_assertions: Record<string, string> = {}
+
+function convert(content: string): string {
+    return content.replace(/\r/g, '').trim()
+        .split('\n').map(x => x.trim()).join('\n')
+}
 
 function throwError(content: string) {
     totalError++
@@ -51,7 +57,7 @@ function throwError(content: string) {
 }
 
 function checkStatement(content: string) {
-    content = content.replace(/\r/g, '').trim()
+    content = convert(content)
     const blocks = content
         .split('\n\n')
         .map(block => block.trim())
@@ -75,17 +81,20 @@ function checkStatement(content: string) {
                 throwError(`"${block}" is not a valid code block`)
             else {
                 const lang = block.split('\n')[0].split('|')[0].replace('```', '')
+                const content = convert(block.slice(block.split('\n')[0].length + 1, -4))
                 if (/^input\d+$/.test(lang)) {
                     const id = lang.replace('input', '')
                     sampleInputId.push(+id)
                     additional_file.push(`${englishName}${id}.in`)
                     maxSampleId = Math.max(maxSampleId, +id)
+                    additional_file_assertions[`${englishName}${id}.in`] = content
                 }
                 if (/^output\d+$/.test(lang)) {
                     const id = lang.replace('output', '')
                     sampleOutputId.push(+id)
                     additional_file.push(`${englishName}${id}.ans`)
                     maxSampleId = Math.max(maxSampleId, +id)
+                    additional_file_assertions[`${englishName}${id}.ans`] = content
                 }
             }
             continue
@@ -159,7 +168,6 @@ function checkJudgeConfig(config: JudgeConfig) {
     }
 }
 
-
 async function main() {
     if (!secret.cookie_sid) await service.login(
         secret.username as string,
@@ -180,6 +188,7 @@ async function main() {
         additional_file = []
         sampleInputId = []
         sampleOutputId = []
+        additional_file_assertions = {}
         const title = await service.getProblemTitle(pid)
         if (!/^.+?（[a-z]+?）$/.test(title)) {
             throwError(`"${title}" is not a valid problem title`)
@@ -211,6 +220,12 @@ async function main() {
         for (let file of files.additional_file)
             if (!additional_file.includes(file))
                 throwError(`Additional file "${file}" is not required.`)
+        for (let [filename, content] of Object.entries(additional_file_assertions)) {
+            if (!files.additional_file.includes(filename)) continue
+            await service.downloadFile((await service.getLinks(pid, [filename], 'additional_file'))[filename], 'tmp/file')
+            if (content !== convert(readFileSync('data/tmp/file').toString()))
+                throwError(`Sample file ${filename} is not same as the sample in statement.`)
+        }
     }
     if (totalError > 0) throw new Error(`Found ${totalError} errors.`)
 }
