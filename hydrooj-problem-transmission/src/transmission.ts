@@ -38,7 +38,9 @@ function setProgress(key: string, value: boolean) {
 }
 
 function renameFunc(filename: string, type: 'testdata' | 'additional_file') {
-    return filename
+    if (type === 'testdata') return filename
+        .replace(/_/g, '-').replace(/out/g, 'ans')
+    else return filename.replace(/out/g, 'ans')
 }
 
 async function main() {
