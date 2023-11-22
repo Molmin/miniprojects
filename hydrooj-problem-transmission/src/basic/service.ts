@@ -37,7 +37,7 @@ export default class HydroAccountService {
         const response = await this
             .post('/login')
             .send({ uname, password })
-        this.cookie = response.header['set-cookie'].join('; ')
+        this.cookie = response.header['set-cookie']
     }
 
     async listProblems(): Promise<string[]> {
