@@ -1,6 +1,7 @@
 import { createWriteStream, readFileSync, writeFileSync } from 'node:fs'
 import superagent from 'superagent'
 import yamljs from 'yamljs'
+import AdmZip from 'adm-zip'
 
 export default class HydroAccountService {
     constructor(
@@ -80,6 +81,7 @@ export default class HydroAccountService {
         catch (e) { }
         writeFileSync(`data/${target}/problem_zh.md`, statement)
         console.log(`Saved Problem Summary`)
+        return pdoc.reference ?? { domainId: this.domainId, pid }
     }
 
     async getProblemTitle(pid: string): Promise<string> {
@@ -104,6 +106,7 @@ export default class HydroAccountService {
                 tag: tag.join(','),
                 difficulty: '',
                 title, content,
+                hidden: true,
             })
         console.log(`Created problem ${this.domainId}/${pid}`)
         return response.body.pid
@@ -143,12 +146,19 @@ export default class HydroAccountService {
     }
 
     async uploadFile(pid: string, type: 'testdata' | 'additional_file', filename: string, path: string) {
+        let upload = readFileSync(path)
+        if (type === 'testdata') {
+            let zip = new AdmZip()
+            zip.addFile(filename, upload, "")
+            upload = zip.toBuffer()
+            filename = 'data.zip'
+        }
         await this.post(`/p/${pid}/files`)
             .field({
                 filename, type,
                 operation: 'upload_file',
             })
-            .attach('file', readFileSync(path))
+            .attach('file', upload)
         return await this.getFiles(pid)
     }
 }
