@@ -1,4 +1,3 @@
-import { createWriteStream, readFileSync, writeFileSync } from 'node:fs'
 import superagent from 'superagent'
 import { JSDOM } from 'jsdom'
 import crypto from 'node:crypto'
