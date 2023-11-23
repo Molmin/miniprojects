@@ -2,7 +2,7 @@ import superagent, { head } from 'superagent'
 import { JSDOM } from 'jsdom'
 import crypto from 'node:crypto'
 import { XMOJContest, XMOJContestDetail, XMOJProblemDetail } from './interface'
-import { convert } from './utils'
+import { convert, convertHTML } from './utils'
 
 function md5(str: string) {
     const md5 = crypto.createHash('md5')
@@ -154,27 +154,28 @@ export default class XMOJAccountService {
             const samples = section.querySelectorAll('.data-sample')
             if (samples.length > 0) {
                 for (let sampleNode of samples) {
-                    // console.log(sampleNode.innerHTML)
-                    const sampleId = sampleNode
-                        .querySelector('.in-out-item > .title')
-                        ?.textContent?.split('#')[1] as string
-                    console.log('sample', sampleId)
-                    const textNodes = sampleNode
-                        .querySelectorAll('span.sampledata')
-                    const input = convert(textNodes[0].textContent as string)
-                    const output = convert(textNodes[1].textContent as string)
-                    content += `\`\`\`input${sampleId}\n${input}\n\`\`\`\n\n`
-                    content += `\`\`\`output${sampleId}\n${output}\n\`\`\`\n\n`
-                    if (section.innerHTML.split('样例说明').length >= 3)
-                        console.log('yoyi', section.innerHTML)
-                    // console.log({
-                    //     input: convert(textNodes[0].textContent as string),
-                    //     output: convert(textNodes[1].textContent as string),
-                    // })
+                    if (sampleNode.querySelector('.in-out')?.innerHTML.trim() !== '') {
+                        const sampleId = sampleNode
+                            .querySelector('.in-out-item > .title')
+                            ?.textContent?.split('#')[1] as string
+                        const sampleTextNodes = sampleNode
+                            .querySelectorAll('span.sampledata')
+                        const input = convert(sampleTextNodes[0].textContent as string)
+                        const output = convert(sampleTextNodes[1].textContent as string)
+                        content += `\`\`\`input${sampleId}\n${input}\n\`\`\`\n\n`
+                        content += `\`\`\`output${sampleId}\n${output}\n\`\`\`\n\n`
+                    }
+                    const descriptionNode = sampleNode.querySelector('.content.lang_cn')
+                    if (descriptionNode !== null) {
+                        const titleNode = descriptionNode
+                            .parentElement?.querySelector('.title') as Element
+                        content += `## ${titleNode.textContent}\n\n`
+                        content += `${convertHTML(descriptionNode)}\n\n`
+                    }
                 }
             }
             else {
-                const text = section.querySelector('.content.lang_cn')?.innerHTML
+                const text = convertHTML(section.querySelector('.content.lang_cn') as Element)
                 content += `## ${title}\n\n${text}\n\n`
             }
         }
