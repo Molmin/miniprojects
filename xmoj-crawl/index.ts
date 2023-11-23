@@ -39,6 +39,10 @@ async function main() {
             const res = await xmoj.getProblem(contestId, pid)
             writeFileSync(`${problemDir}/problem_zh.md`, res.content.trim() === '' ? '[]()' : res.content)
             writeFileSync(`${problemDir}/problem.yaml`, yamljs.stringify({ title: res.title, tag: [] }))
+            if (problem.haveSolution) {
+                const solution = await xmoj.getSolution(contestId, pid)
+                writeFileSync(`${problemDir}/solution.md`, solution)
+            }
             pid++
         }
     }

@@ -193,6 +193,9 @@ export default class XMOJAccountService {
     }
 
     async getSolution(contestId: number, problemId: number) {
-
+        const response = await this.get('/problem_solution.php')
+            .query({ cid: contestId, pid: problemId })
+        const { window: { document } } = new JSDOM(response.text)
+        return convertHTML(document.querySelector('.content.lang_cn') as Element)
     }
 }
