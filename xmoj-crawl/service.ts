@@ -113,7 +113,7 @@ export default class XMOJAccountService {
                 nodes.push(node.textContent?.trim() as string)
             let problem = {
                 title: nodes[2],
-                problemId: +nodes[1].split(' ')[0],
+                problemId: +(/(\d+)[^\d]/.exec(nodes[1]) as string[])[1],
                 haveSolution: false,
                 haveStandardCode: false,
             }
