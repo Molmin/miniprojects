@@ -182,10 +182,10 @@ export default class XMOJAccountService {
             title,
             content,
             judge: {
-                input: mainNode?.innerHTML.split('输入文件: </span>')[1].split('&nbsp;')[0],
-                output: mainNode?.innerHTML.split('输出文件: </span>')[1].split('&nbsp;')[0],
-                time: mainNode?.innerHTML.split('时间限制: </span>')[1].split('&nbsp;')[0],
-                memory: mainNode?.innerHTML.split('内存限制: </span>')[1].split('&nbsp;')[0],
+                input: mainNode?.innerHTML.split('输入文件: </span>')[1].split('&nbsp;')[0].split('<br>')[0],
+                output: mainNode?.innerHTML.split('输出文件: </span>')[1].split('&nbsp;')[0].split('<br>')[0],
+                time: mainNode?.innerHTML.split('时间限制: </span>')[1].split('&nbsp;')[0].split('<br>')[0],
+                memory: mainNode?.innerHTML.split('内存限制: </span>')[1].split('&nbsp;')[0].split('<br>')[0],
             },
         }
     }

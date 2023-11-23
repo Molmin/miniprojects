@@ -39,6 +39,25 @@ async function main() {
                 const res = await xmoj.getProblem(contestId, pid)
                 writeFileSync(`${problemDir}/problem_zh.md`, res.content.trim() === '' ? '[]()' : res.content)
                 writeFileSync(`${problemDir}/problem.yaml`, yamljs.stringify({ title: res.title, tag: [] }))
+                if (!/^[\d\.]+? Sec$/.test(res.judge.time))
+                    throw new Error(`Error format at ${problem.problemId}`)
+                if (!/^[\d\.]+? MB$/.test(res.judge.memory))
+                    throw new Error(`Error format at ${problem.problemId}`)
+                if (res.judge.input === '标准输入') {
+                    if (res.judge.output !== '标准输出')
+                        throw new Error(`Error format at ${problem.problemId}`)
+                }
+                else if (!/^[a-z]+?\.in$/.test(res.judge.input))
+                    throw new Error(`Error format at ${problem.problemId}`)
+                else if (res.judge.input.split('.')[0] + '.out' !== res.judge.output)
+                    throw new Error(`Error format at ${problem.problemId}`)
+                let config: Record<string, string> = {
+                    time: `${+res.judge.time.split(' ')[0]}s`,
+                    memory: `${+res.judge.memory.split(' ')[0]}m`,
+                }
+                if (res.judge.input !== '标准输入')
+                    config.filename = res.judge.input.split('.')[0]
+                writeFileSync(`${problemDir}/config.yaml`, yamljs.stringify(config))
                 const records = await xmoj.getRecords(problem.problemId)
                 for (let recordId of records) {
                     console.log(`Getting record ${recordId}`)
