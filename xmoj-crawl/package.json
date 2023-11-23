@@ -17,7 +17,8 @@
         "yamljs": "^0.3.0"
     },
     "scripts": {
-        "start": "npx ts-node index.ts"
+        "start": "npx ts-node index.ts",
+        "upload": "npx ts-node upload.ts"
     },
     "author": "Milmon <milmon@qq.com>",
     "license": "GPL-3.0"
