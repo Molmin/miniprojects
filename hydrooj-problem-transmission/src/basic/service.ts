@@ -4,6 +4,7 @@ import yamljs from 'yamljs'
 import AdmZip from 'adm-zip'
 
 export default class HydroAccountService {
+    public uid: number = 0
     constructor(
         public endPoint: string,
         public cookie: string,
@@ -30,6 +31,7 @@ export default class HydroAccountService {
     async getLoggedInUser(): Promise<string> {
         const { body: { UserContext } } = await this.get(`/`)
         const json = JSON.parse(UserContext)
+        this.uid = json._id
         return json?.uname
     }
     async login(uname: string, password: string) {
@@ -111,19 +113,34 @@ export default class HydroAccountService {
         console.log(`Created problem ${this.domainId}/${pid}`)
         return response.body.pid
     }
-    async editProblem(pid: string, path: string) {
+    async editProblem(pid: string, path: string, tags: string[] = []) {
         const content = readFileSync(`${path}/problem_zh.md`).toString()
         const { title, tag } = yamljs.load(`${path}/problem.yaml`)
         const response = await this.post(`/p/${pid}/edit`)
             .send({
                 pid: /^[a-zA-Z]+[a-zA-Z0-9]*$/i.test(pid) ? pid : '',
-                tag: tag.join(','),
+                tag: (tags.length === 0 ? tag : tags).join(','),
                 difficulty: '',
                 title, content,
                 hidden: true,
             })
         console.log(`Edited problem ${this.domainId}/${pid}`)
         return response.body.pid
+    }
+
+    async getMySolutionId(pid: string): Promise<string> {
+        const { body: { psdocs } } = await this.get(`/p/${pid}/solution`)
+        const my = psdocs.filter((psdoc: any) => psdoc.owner === this.uid)
+        return my.length === 0 ? '' : my[0]._id
+    }
+    async createSolution(pid: string, content: string) {
+        const { body } = await this.post(`/p/${pid}/solution`)
+            .send({ operation: 'submit', content })
+        return body.psid
+    }
+    async updateSolution(pid: string, solutionId: string, content: string) {
+        await this.post(`/p/${pid}/solution`)
+            .send({ operation: 'edit_solution', psid: solutionId, content })
     }
 
     async getFiles(pid: string) {

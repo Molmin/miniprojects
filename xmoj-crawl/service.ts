@@ -1,4 +1,4 @@
-import superagent, { head } from 'superagent'
+import superagent from 'superagent'
 import { JSDOM } from 'jsdom'
 import crypto from 'node:crypto'
 import { XMOJContest, XMOJContestDetail, XMOJProblemDetail } from './interface'
@@ -106,7 +106,6 @@ export default class XMOJAccountService {
         if (headerNodes.includes('标程'))
             while (headerNodes[codeIndex] !== '标程') codeIndex++
         let problems = []
-        let pid = 0
         for (let problemNode of problemNodes) {
             let nodes = []
             for (let node of problemNode.querySelectorAll('td'))
@@ -122,7 +121,6 @@ export default class XMOJAccountService {
             if (codeIndex && nodes[codeIndex] === '打开')
                 problem.haveStandardCode = true
             problems.push(problem)
-            pid++
         }
         return {
             contestId,
