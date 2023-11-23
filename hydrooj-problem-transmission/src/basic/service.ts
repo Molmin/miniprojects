@@ -111,6 +111,20 @@ export default class HydroAccountService {
         console.log(`Created problem ${this.domainId}/${pid}`)
         return response.body.pid
     }
+    async editProblem(pid: string, path: string) {
+        const content = readFileSync(`${path}/problem_zh.md`).toString()
+        const { title, tag } = yamljs.load(`${path}/problem.yaml`)
+        const response = await this.post(`/p/${pid}/edit`)
+            .send({
+                pid: /^[a-zA-Z]+[a-zA-Z0-9]*$/i.test(pid) ? pid : '',
+                tag: tag.join(','),
+                difficulty: '',
+                title, content,
+                hidden: true,
+            })
+        console.log(`Edited problem ${this.domainId}/${pid}`)
+        return response.body.pid
+    }
 
     async getFiles(pid: string) {
         const { body } = await this.get(`/p/${pid}/files`)

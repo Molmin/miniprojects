@@ -146,7 +146,7 @@ export default class XMOJAccountService {
             .split('?id=')[1]
         const title = (document
             .querySelector('title')?.textContent as string)
-            .split(' ')[2]
+            .split(' ').splice(2).join(' ')
         const sections = document.querySelectorAll('div.cnt-row')
         let content = ''
         for (let section of sections) {

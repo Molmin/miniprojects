@@ -43,5 +43,6 @@ export function convertHTML(content: Element) {
             ret += '\n'
         }
     }
-    return ret
+    return ret.replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
 }
