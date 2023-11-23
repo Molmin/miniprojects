@@ -223,7 +223,7 @@ export default class XMOJAccountService {
         const accepted = code.split('/' + '*'.repeat(60)).pop()?.includes('Result: 正确')
         return {
             code: `// XMOJ, Contest ${contestId}, problem ${problemId}, `
-                + `user code, ${accepted ? 'should AC' : 'shouldn\'t AC'}\n` + code,
+                + `record ${record}, ${accepted ? 'should AC' : 'shouldn\'t AC'}\n` + code,
             accepted,
         }
     }

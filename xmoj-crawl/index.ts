@@ -39,6 +39,12 @@ async function main() {
                 const res = await xmoj.getProblem(contestId, pid)
                 writeFileSync(`${problemDir}/problem_zh.md`, res.content.trim() === '' ? '[]()' : res.content)
                 writeFileSync(`${problemDir}/problem.yaml`, yamljs.stringify({ title: res.title, tag: [] }))
+                const records = await xmoj.getRecords(problem.problemId)
+                for (let recordId of records) {
+                    console.log(`Getting record ${recordId}`)
+                    const record = await xmoj.getRecord(contestId, pid, recordId)
+                    writeFileSync(`${problemDir}/codes/${recordId}-${record.accepted ? 100 : 0}.cpp`, record.code)
+                }
             }
             if (problem.haveSolution) {
                 const solution = await xmoj.getSolution(contestId, pid)
@@ -47,12 +53,6 @@ async function main() {
             if (problem.haveStandardCode) {
                 const code = await xmoj.getCode(contestId, pid)
                 writeFileSync(`${problemDir}/codes/std-100.cpp`, code)
-            }
-            const records = await xmoj.getRecords(problem.problemId)
-            for (let recordId of records) {
-                console.log(`Getting record ${recordId}`)
-                const record = await xmoj.getRecord(contestId, pid, recordId)
-                writeFileSync(`${problemDir}/codes/${recordId}-${record.accepted ? 100 : 0}.cpp`, record.code)
             }
             pid++
         }

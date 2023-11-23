@@ -2,6 +2,9 @@ export function convert(content: string) {
     return content.replace(/\r/g, '').trim()
         .split('\n').map(x => x.trim()).join('\n')
 }
+export function convertCode(content: string) {
+    return content.replace(/\r/g, '').trim()
+}
 
 export function convertHTML(content: Element) {
     let ret = ''
