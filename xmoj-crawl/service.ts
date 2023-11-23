@@ -196,4 +196,35 @@ export default class XMOJAccountService {
         const { window: { document } } = new JSDOM(response.text)
         return convertHTML(document.querySelector('.content.lang_cn') as Element)
     }
+
+    async getCode(contestId: number, problemId: number) {
+        const response = await this.get('/problem_std.php')
+            .query({ cid: contestId, pid: problemId })
+        const { window: { document } } = new JSDOM(response.text)
+        return `// XMOJ, Contest ${contestId}, problem ${problemId}, standard code\n`
+            + (document.querySelector('.jumbotron > pre')?.textContent || '')
+    }
+
+    async getRecords(problemId: number) {
+        const response = await this.get('/status.php')
+            .query({ problem_id: problemId, user_id: this.username })
+        const { window: { document } } = new JSDOM(response.text)
+        const recordNodes = document.querySelectorAll('#result-tab > tbody > tr')
+        let records = []
+        for (let recordNode of recordNodes) {
+            records.push(+(recordNode.querySelector('td:nth-child(2)')?.textContent as string))
+        }
+        return records
+    }
+    async getRecord(contestId: number, problemId: number, record: number) {
+        const response = await this.get('/showsource.php').query({ id: record })
+        const { window: { document } } = new JSDOM(response.text)
+        const code = document.querySelector('.jumbotron > pre')?.textContent || ''
+        const accepted = code.split('/' + '*'.repeat(60)).pop()?.includes('Result: 正确')
+        return {
+            code: `// XMOJ, Contest ${contestId}, problem ${problemId}, `
+                + `user code, ${accepted ? 'should AC' : 'shouldn\'t AC'}\n` + code,
+            accepted,
+        }
+    }
 }

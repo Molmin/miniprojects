@@ -28,20 +28,31 @@ async function main() {
         writeFileSync(`data/contests/${contestId}/contest.json`, JSON.stringify(result, null, '  '))
         let pid = 0
         for (let problem of result.problems) {
-            if (gettedProblems.includes(problem.problemId)) {
-                console.log(`[${contestId}] Skipped problem ${pid} #${problem.problemId} ${problem.title}`)
-                continue
-            }
-            gettedProblems.push(problem.problemId)
             const problemDir = `data/problems/${problem.problemId}`
-            ensureDirSync(problemDir)
-            console.log(`[${contestId}] Getting problem ${pid} #${problem.problemId} ${problem.title}`)
-            const res = await xmoj.getProblem(contestId, pid)
-            writeFileSync(`${problemDir}/problem_zh.md`, res.content.trim() === '' ? '[]()' : res.content)
-            writeFileSync(`${problemDir}/problem.yaml`, yamljs.stringify({ title: res.title, tag: [] }))
+            if (gettedProblems.includes(problem.problemId))
+                console.log(`[${contestId}] Skipped problem ${pid} #${problem.problemId} ${problem.title}`)
+            else {
+                gettedProblems.push(problem.problemId)
+                ensureDirSync(problemDir)
+                ensureDirSync(`${problemDir}/codes`)
+                console.log(`[${contestId}] Getting problem ${pid} #${problem.problemId} ${problem.title}`)
+                const res = await xmoj.getProblem(contestId, pid)
+                writeFileSync(`${problemDir}/problem_zh.md`, res.content.trim() === '' ? '[]()' : res.content)
+                writeFileSync(`${problemDir}/problem.yaml`, yamljs.stringify({ title: res.title, tag: [] }))
+            }
             if (problem.haveSolution) {
                 const solution = await xmoj.getSolution(contestId, pid)
                 writeFileSync(`${problemDir}/solution.md`, solution)
+            }
+            if (problem.haveStandardCode) {
+                const code = await xmoj.getCode(contestId, pid)
+                writeFileSync(`${problemDir}/codes/std-100.cpp`, code)
+            }
+            const records = await xmoj.getRecords(problem.problemId)
+            for (let recordId of records) {
+                console.log(`Getting record ${recordId}`)
+                const record = await xmoj.getRecord(contestId, pid, recordId)
+                writeFileSync(`${problemDir}/codes/${recordId}-${record.accepted ? 100 : 0}.cpp`, record.code)
             }
             pid++
         }
