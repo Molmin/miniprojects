@@ -54,7 +54,10 @@ async function main() {
     if (username === 'Guest') return console.error(`Not logged in`)
     console.log(`Logged in HydroOJ as user ${username}`)
     const problems = readdirSync('data/problems')
+    let processTotalProblems = 0
     for (let problemId of problems) {
+        processTotalProblems++
+        console.log(`[${processTotalProblems}/${problems.length}] Solving problem ${problemId}`)
         const pid = `P${problemId}`
         const problemDir = `data/problems/${problemId}`
         const haveSolution = existsSync(`${problemDir}/solution.md`)
