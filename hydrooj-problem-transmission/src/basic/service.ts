@@ -1,8 +1,10 @@
 import { createWriteStream, readFileSync, writeFileSync } from 'node:fs'
 import superagent from 'superagent'
 import yamljs from 'yamljs'
+import AdmZip from 'adm-zip'
 
 export default class HydroAccountService {
+    public uid: number = 0
     constructor(
         public endPoint: string,
         public cookie: string,
@@ -29,6 +31,7 @@ export default class HydroAccountService {
     async getLoggedInUser(): Promise<string> {
         const { body: { UserContext } } = await this.get(`/`)
         const json = JSON.parse(UserContext)
+        this.uid = json._id
         return json?.uname
     }
     async login(uname: string, password: string) {
@@ -36,7 +39,7 @@ export default class HydroAccountService {
         const response = await this
             .post('/login')
             .send({ uname, password })
-        this.cookie = response.header['set-cookie'].join('; ')
+        this.cookie = response.header['set-cookie']
     }
 
     async listProblems(): Promise<string[]> {
@@ -80,6 +83,7 @@ export default class HydroAccountService {
         catch (e) { }
         writeFileSync(`data/${target}/problem_zh.md`, statement)
         console.log(`Saved Problem Summary`)
+        return pdoc.reference ?? { domainId: this.domainId, pid }
     }
 
     async getProblemTitle(pid: string): Promise<string> {
@@ -104,9 +108,39 @@ export default class HydroAccountService {
                 tag: tag.join(','),
                 difficulty: '',
                 title, content,
+                hidden: true,
             })
         console.log(`Created problem ${this.domainId}/${pid}`)
         return response.body.pid
+    }
+    async editProblem(pid: string, path: string, tags: string[] = []) {
+        const content = readFileSync(`${path}/problem_zh.md`).toString()
+        const { title, tag } = yamljs.load(`${path}/problem.yaml`)
+        const response = await this.post(`/p/${pid}/edit`)
+            .send({
+                pid: /^[a-zA-Z]+[a-zA-Z0-9]*$/i.test(pid) ? pid : '',
+                tag: (tags.length === 0 ? tag : tags).join(','),
+                difficulty: '',
+                title, content,
+                hidden: true,
+            })
+        console.log(`Edited problem ${this.domainId}/${pid}`)
+        return response.body.pid
+    }
+
+    async getMySolutionId(pid: string): Promise<string> {
+        const { body: { psdocs } } = await this.get(`/p/${pid}/solution`)
+        const my = psdocs.filter((psdoc: any) => psdoc.owner === this.uid)
+        return my.length === 0 ? '' : my[0]._id
+    }
+    async createSolution(pid: string, content: string) {
+        const { body } = await this.post(`/p/${pid}/solution`)
+            .send({ operation: 'submit', content })
+        return body.psid
+    }
+    async updateSolution(pid: string, solutionId: string, content: string) {
+        await this.post(`/p/${pid}/solution`)
+            .send({ operation: 'edit_solution', psid: solutionId, content })
     }
 
     async getFiles(pid: string) {
@@ -120,6 +154,12 @@ export default class HydroAccountService {
         const links = await this.post(`/p/${pid}/files`)
             .send({ operation: "get_links", type, files })
         return links.body.links
+    }
+
+    async getJudgeConfig(pid: string) {
+        const filename = 'config.yaml'
+        await this.downloadFile((await this.getLinks(pid, [filename], 'testdata'))[filename], 'tmp/config.yaml')
+        return yamljs.load('data/tmp/config.yaml')
     }
 
     async downloadFile(link: string, target: string) {
@@ -137,12 +177,19 @@ export default class HydroAccountService {
     }
 
     async uploadFile(pid: string, type: 'testdata' | 'additional_file', filename: string, path: string) {
+        let upload = readFileSync(path)
+        if (type === 'testdata') {
+            let zip = new AdmZip()
+            zip.addFile(filename, upload, "")
+            upload = zip.toBuffer()
+            filename = 'data.zip'
+        }
         await this.post(`/p/${pid}/files`)
             .field({
                 filename, type,
                 operation: 'upload_file',
             })
-            .attach('file', readFileSync(path))
+            .attach('file', upload)
         return await this.getFiles(pid)
     }
 }

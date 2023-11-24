@@ -1,21 +1,24 @@
 {
   "name": "hydrooj-problem-transmission",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "",
   "main": "index.ts",
   "devDependencies": {
+    "@types/adm-zip": "^0.5.4",
     "@types/fs-extra": "^11.0.3",
     "@types/node": "^20.8.9",
     "@types/superagent": "^4.1.20",
     "@types/yamljs": "^0.2.33"
   },
   "dependencies": {
+    "adm-zip": "^0.5.10",
     "fs-extra": "^11.1.1",
     "superagent": "^8.1.2",
     "yamljs": "^0.3.0"
   },
   "scripts": {
     "start": "npx ts-node src/transmission.ts",
+    "rejudge": "npx ts-node src/rejudge.ts",
     "check": "npx ts-node src/check.ts"
   },
   "author": "Milmon <milmon@qq.com>",

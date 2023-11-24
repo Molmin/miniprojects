@@ -1,6 +1,30 @@
 import { readFileSync } from 'node:fs'
+import { ensureDirSync } from 'fs-extra'
 import HydroAccountService from './basic/service'
 import { SecretConfig } from './basic/secret'
+
+interface SubtaskConfig {
+    id: number
+    if: number[]
+    score: number
+    type: 'sum' | 'min' | 'max'
+    cases: {
+        input: string
+        output: string
+    }[]
+}
+
+interface JudgeConfig {
+    type: 'default'
+    time?: string
+    memory?: string
+    checker?: string
+    subtasks: SubtaskConfig[]
+}
+
+const ALLOW_EXTRA_TESTDATA = [
+    ...['py', 'sh', 'cc', 'cpp', 'js', 'mjs', 'ts'].map((ext: string) => `generator.${ext}`)
+]
 
 console.log({
     SecretConfigFile: process.argv[2] || 'secret.json',
@@ -16,14 +40,24 @@ const service = new HydroAccountService(
 
 let totalError = 0
 let nowpid: string = '', englishName: string = ''
+let additional_file: string[] = []
+let testdata: string[] = []
+let maxSampleId = 0
+let sampleInputId: number[] = [], sampleOutputId: number[] = []
+let additional_file_assertions: Record<string, string> = {}
+
+function convert(content: string): string {
+    return content.replace(/\r/g, '').trim()
+        .split('\n').map(x => x.trim()).join('\n')
+}
 
 function throwError(content: string) {
     totalError++
-    console.log(`${nowpid}: ${content}`)
+    console.error(`Error: ${nowpid}: ${content}`)
 }
 
 function checkStatement(content: string) {
-    content = content.replace(/\r/g, '').trim()
+    content = convert(content)
     const blocks = content
         .split('\n\n')
         .map(block => block.trim())
@@ -36,6 +70,7 @@ function checkStatement(content: string) {
                 /^## 样例 [1-9][0-9]*$/.test(block) ||
                 /^## 样例 [1-9][0-9]*? 解释$/.test(block) ||
                 /^## 数据范围$/.test(block) ||
+                /^## 评分方式$/.test(block) ||
                 /^## 数据范围与评分方式$/.test(block) ||
                 /^## 子任务$/.test(block)
             )) throwError(`"${block}" is not a valid title`)
@@ -44,6 +79,24 @@ function checkStatement(content: string) {
         if (block.startsWith('```')) {
             if (!block.startsWith('```') || !block.endsWith('```'))
                 throwError(`"${block}" is not a valid code block`)
+            else {
+                const lang = block.split('\n')[0].split('|')[0].replace('```', '')
+                const content = convert(block.slice(block.split('\n')[0].length + 1, -4))
+                if (/^input\d+$/.test(lang)) {
+                    const id = lang.replace('input', '')
+                    sampleInputId.push(+id)
+                    additional_file.push(`${englishName}${id}.in`)
+                    maxSampleId = Math.max(maxSampleId, +id)
+                    additional_file_assertions[`${englishName}${id}.in`] = content
+                }
+                if (/^output\d+$/.test(lang)) {
+                    const id = lang.replace('output', '')
+                    sampleOutputId.push(+id)
+                    additional_file.push(`${englishName}${id}.ans`)
+                    maxSampleId = Math.max(maxSampleId, +id)
+                    additional_file_assertions[`${englishName}${id}.ans`] = content
+                }
+            }
             continue
         }
         if (/^见选手目录/.test(block)) {
@@ -65,13 +118,55 @@ function checkStatement(content: string) {
                     result[3] !== `${folder}${id}.ans` ||
                     result[4] !== `${englishName}${id}.ans`
                 ) throwError(message)
+                else {
+                    maxSampleId = Math.max(maxSampleId, +id)
+                    sampleInputId.push(+id)
+                    sampleOutputId.push(+id)
+                    additional_file.push(`${englishName}${id}.in`)
+                    additional_file.push(`${englishName}${id}.ans`)
+                }
             }
             continue
         }
+        const AdditionalFileMatcher = /\[.*?\]\(file\:\/\/(.+?)( .+?)?\)/g
+        let file
+        while (file = AdditionalFileMatcher.exec(block))
+            additional_file.push(file[1])
     }
+    let flag = false
+    for (let sampleId = 1; sampleId <= maxSampleId; sampleId++) {
+        if (sampleInputId[sampleId - 1] !== sampleId) flag = true
+        if (sampleOutputId[sampleId - 1] !== sampleId) flag = true
+    }
+    if (flag) throwError(`Unknown error in samples.`)
+    let command
+    const CommandMatcher = /<!-- PROBLEM_FORMAT_CHECKER: (.+?) -->/g
+    while (command = CommandMatcher.exec(content))
+        if (command[1].startsWith('extra_additional_file: '))
+            additional_file.push(command[1].replace('extra_additional_file: ', ''))
 }
 
-let threwError = false
+function checkJudgeConfig(config: JudgeConfig) {
+    for (let subtask of config.subtasks) {
+        for (let testcase of subtask.cases) {
+            if (testcase.input !== '/dev/null') {
+                testdata.push(testcase.input)
+                if (!/^[a-z]*?[\d\-]+?\.in$/.test(testcase.input) || !testcase.input.startsWith(englishName))
+                    throwError(`Input file "${testcase.input}" is not a valid name.`)
+            }
+            if (testcase.output !== '/dev/null') {
+                testdata.push(testcase.output)
+                if (!/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.output) || !testcase.output.startsWith(englishName))
+                    throwError(`Output file "${testcase.output}" is not a valid name.`)
+            }
+        }
+    }
+    if (config.checker) {
+        if (config.checker !== 'checker.cc')
+            throwError(`Checker file must be 'checker.cc'.`)
+        testdata.push(config.checker)
+    }
+}
 
 async function main() {
     if (!secret.cookie_sid) await service.login(
@@ -81,13 +176,19 @@ async function main() {
     const username = await service.getLoggedInUser()
     if (username === 'Guest') {
         console.error(`Not logged in`)
-        threwError = true
         throw new Error(`Not logged in.`)
     }
     console.log(`Logged in as user ${username}`)
+    ensureDirSync('data/tmp')
     const pids = await service.listProblems()
     for (let pid of pids) {
         nowpid = pid
+        maxSampleId = 0
+        testdata = ['config.yaml']
+        additional_file = []
+        sampleInputId = []
+        sampleOutputId = []
+        additional_file_assertions = {}
         const title = await service.getProblemTitle(pid)
         if (!/^.+?（[a-z]+?）$/.test(title)) {
             throwError(`"${title}" is not a valid problem title`)
@@ -99,11 +200,34 @@ async function main() {
         const statement = await service.getProblemStatement(pid)
         for (let [, content] of Object.entries(statement))
             checkStatement(content as string)
+        const files = await service.getFiles(pid)
+        if (!files.testdata.includes('config.yaml')) {
+            throwError('No judge config file found.')
+            continue
+        }
+        console.log(`Checking judge config`)
+        const config = await service.getJudgeConfig(pid)
+        checkJudgeConfig(config)
+        for (let file of testdata)
+            if (!files.testdata.includes(file))
+                throwError(`File "${file}" can not found in testdata.`)
+        for (let file of additional_file)
+            if (!files.additional_file.includes(file))
+                throwError(`File "${file}" can not found in additional file.`)
+        for (let file of files.testdata)
+            if (!testdata.includes(file) && !ALLOW_EXTRA_TESTDATA.includes(file))
+                throwError(`Testdata "${file}" is not required.`)
+        for (let file of files.additional_file)
+            if (!additional_file.includes(file))
+                throwError(`Additional file "${file}" is not required.`)
+        for (let [filename, content] of Object.entries(additional_file_assertions)) {
+            if (!files.additional_file.includes(filename)) continue
+            await service.downloadFile((await service.getLinks(pid, [filename], 'additional_file'))[filename], 'tmp/file')
+            if (content !== convert(readFileSync('data/tmp/file').toString()))
+                throwError(`Sample file ${filename} is not same as the sample in statement.`)
+        }
     }
-    if (totalError > 0) {
-        threwError = true
-        throw new Error(`Found ${totalError} errors.`)
-    }
+    if (totalError > 0) throw new Error(`Found ${totalError} errors.`)
 }
 
 main()

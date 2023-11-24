@@ -37,24 +37,32 @@ function setProgress(key: string, value: boolean) {
     writeFileSync('data/progress.json', JSON.stringify(progress, null, '  '))
 }
 
+function renameFunc(filename: string, type: 'testdata' | 'additional_file') {
+    if (type === 'testdata') return filename
+        .replace(/_/g, '-').replace(/out/g, 'ans')
+    else return filename.replace(/out/g, 'ans')
+}
+
 async function main() {
     const username = await service.getLoggedInUser()
     if (username === 'Guest') return console.error(`Not logged in`)
     console.log(`Logged in as user ${username}`)
     for (let pid of config.download) {
+        service.domainId = secret.domain
         console.log(`Downloading problem ${secret.domain}/${pid}`)
         const path_prefix = `${service.domainId}/${pid}`
         ensureDirSync(`data/${path_prefix}/testdata`)
         ensureDirSync(`data/${path_prefix}/additional_file`)
-        let { testdata, additional_file } = await service.getFiles(pid)
-        await service.getProblemSummary(pid, path_prefix)
+        const reference = await service.getProblemSummary(pid, path_prefix)
+        service.domainId = reference.domainId
+        let { testdata, additional_file } = await service.getFiles(reference.pid)
 
         testdata = testdata.filter((filename: string) => {
             const path = `data/${path_prefix}/testdata/${filename}`
             return !progress[path]
         })
         console.log(`Downloading total ${testdata.length} files`)
-        const testdata_links = await service.getLinks(pid, testdata, 'testdata')
+        const testdata_links = await service.getLinks(reference.pid, testdata, 'testdata')
         for (let [filename, link] of Object.entries(testdata_links)) {
             const path = `data/${path_prefix}/testdata/${filename}`
             setProgress(path, false)
@@ -67,7 +75,7 @@ async function main() {
             return !progress[path]
         })
         console.log(`Downloading total ${additional_file.length} files`)
-        const additional_file_links = await service.getLinks(pid, additional_file, 'additional_file')
+        const additional_file_links = await service.getLinks(reference.pid, additional_file, 'additional_file')
         for (let [filename, link] of Object.entries(additional_file_links)) {
             const path = `data/${path_prefix}/additional_file/${filename}`
             setProgress(path, false)
@@ -75,6 +83,7 @@ async function main() {
             setProgress(path, true)
         }
     }
+    service.domainId = secret.domain
     for (let problem of config.upload) {
         const { path } = problem
         let pid = problem.pid
@@ -85,18 +94,20 @@ async function main() {
         const additional_file = readdirSync(`${path}/additional_file`)
         let files = await service.getFiles(pid)
         for (let file of testdata) {
-            if (files.testdata.includes(file)) continue
-            files = await service.uploadFile(pid, 'testdata', file, `${path}/testdata/${file}`)
-            if (files.testdata.includes(file))
-                console.log(`Successfully uploaded file ${file}`)
-            else console.log(`Failed to upload file ${file}`)
+            const filename = renameFunc(file, 'testdata')
+            if (files.testdata.includes(filename)) continue
+            files = await service.uploadFile(pid, 'testdata', filename, `${path}/testdata/${file}`)
+            if (files.testdata.includes(filename))
+                console.log(`Successfully uploaded file ${filename}`)
+            else console.log(`Failed to upload file ${filename}`)
         }
         for (let file of additional_file) {
-            if (files.additional_file.includes(file)) continue
-            files = await service.uploadFile(pid, 'additional_file', file, `${path}/additional_file/${file}`)
-            if (files.additional_file.includes(file))
-                console.log(`Successfully uploaded file ${file}`)
-            else console.log(`Failed to upload file ${file}`)
+            const filename = renameFunc(file, 'additional_file')
+            if (files.additional_file.includes(filename)) continue
+            files = await service.uploadFile(pid, 'additional_file', filename, `${path}/additional_file/${file}`)
+            if (files.additional_file.includes(filename))
+                console.log(`Successfully uploaded file ${filename}`)
+            else console.log(`Failed to upload file ${filename}`)
         }
     }
 }

@@ -2,8 +2,9 @@ name: Hydro Problem Check
 
 on:
   push:
-    branches:
-      - master
+    paths:
+      - 'hydrooj-problem-transmission/**'
+      - 'scripts/checkProblems.mjs'
   schedule:
     - cron: '0 0 1,11,21 * *'
 
