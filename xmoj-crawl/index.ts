@@ -20,7 +20,7 @@ async function main() {
     let processTotalContests = 0
     for (let contest of contests) {
         processTotalContests++
-        await new Promise((resolve) => setTimeout(resolve, 50))
+        await new Promise((resolve) => setTimeout(resolve, 100))
         const { contestId } = contest
         ensureDirSync(`data/contests/${contestId}`)
         console.log(`[${processTotalContests}/${contests.length}] Getting contest ${contestId} (${contest.title})`)

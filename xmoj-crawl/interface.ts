@@ -7,6 +7,7 @@ export interface XMOJContestDetail {
     contestId: number
     title: string
     date: string
+    review: boolean
     problems: {
         title: string
         problemId: number

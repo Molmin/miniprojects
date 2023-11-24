@@ -96,6 +96,9 @@ export default class XMOJAccountService {
         const date = mainNode
             .querySelectorAll('font')[0]
             .textContent?.split(' ')[0] as string
+        let review = false
+        for (let node of mainNode.querySelectorAll('a'))
+            if (node.textContent === '回看') review = true
         const problemNodes = mainNode.querySelectorAll('table#problemset > tbody > tr')
         const headerNodes = []
         for (let node of mainNode.querySelectorAll('table#problemset > thead > tr > td'))
@@ -126,6 +129,7 @@ export default class XMOJAccountService {
             contestId,
             title,
             date,
+            review,
             problems,
         }
     }
@@ -137,6 +141,18 @@ export default class XMOJAccountService {
             .get('/problem.php')
             .query({ cid: contestId, pid: problemId })
         const { window: { document } } = new JSDOM(response.text)
+        const imgs = document.querySelectorAll('img')
+        for (let img of imgs) {
+            const src = img.getAttribute('src') as string
+            const url = new URL(src, this.endPoint).href
+            img.setAttribute('src', url)
+        }
+        const links = document.querySelectorAll('a')
+        for (let link of links) {
+            const src = link.getAttribute('href') as string
+            const url = new URL(src, this.endPoint).href
+            link.setAttribute('href', url)
+        }
         const mainNode = document.querySelector('center') as Element
         const id = +(mainNode
             ?.querySelectorAll('a')[1]
@@ -194,6 +210,18 @@ export default class XMOJAccountService {
         const response = await this.get('/problem_solution.php')
             .query({ cid: contestId, pid: problemId })
         const { window: { document } } = new JSDOM(response.text)
+        const imgs = document.querySelectorAll('img')
+        for (let img of imgs) {
+            const src = img.getAttribute('src') as string
+            const url = new URL(src, this.endPoint).href
+            img.setAttribute('src', url)
+        }
+        const links = document.querySelectorAll('a')
+        for (let link of links) {
+            const src = link.getAttribute('href') as string
+            const url = new URL(src, this.endPoint).href
+            link.setAttribute('href', url)
+        }
         return convertHTML(document.querySelector('.content.lang_cn') as Element)
     }
 
