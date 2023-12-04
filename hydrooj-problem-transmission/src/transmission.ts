@@ -90,8 +90,15 @@ async function main() {
         console.log(`Uploading problem ${secret.domain}/${pid}`)
         if (!await service.existsProblem(pid))
             pid = await service.createProblem(pid, path)
-        const testdata = readdirSync(`${path}/testdata`)
-        const additional_file = readdirSync(`${path}/additional_file`)
+        function toSortString(str: string) {
+            return str.replace(/(\d+)/g, (s) => s.padStart(6, '0'));
+        }
+        function sortFunc(x: string, y: string) {
+            if (toSortString(x) === toSortString(y)) return x < y ? -1 : 1
+            else return toSortString(x) < toSortString(y) ? -1 : 1
+        }
+        const testdata = readdirSync(`${path}/testdata`).sort(sortFunc)
+        const additional_file = readdirSync(`${path}/additional_file`).sort(sortFunc)
         let files = await service.getFiles(pid)
         for (let file of testdata) {
             const filename = renameFunc(file, 'testdata')
