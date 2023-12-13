@@ -14,7 +14,7 @@ async function main() {
         pdocs = pdocs.map((pdoc: { pid: string }) => pdoc.pid) as string[]
         list = list.concat(pdocs)
     }
-    console.log(list)
+    console.log(list.join('\n'))
 }
 
 main()

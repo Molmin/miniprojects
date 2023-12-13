@@ -19,7 +19,8 @@
   "scripts": {
     "start": "npx ts-node src/transmission.ts",
     "rejudge": "npx ts-node src/rejudge.ts",
-    "check": "npx ts-node src/check.ts"
+    "check": "npx ts-node src/check.ts",
+    "atcoder:test": "npx ts-node src/atcoder_test.ts"
   },
   "author": "Milmon <milmon@qq.com>",
   "license": "GPL-3.0"
