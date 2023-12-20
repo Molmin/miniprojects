@@ -1,0 +1,21 @@
+{
+  "name": "hydrooj-problem-transmission",
+  "version": "1.3.0",
+  "description": "",
+  "main": "index.ts",
+  "devDependencies": {
+    "@types/node": "^20.8.9",
+    "@types/superagent": "^4.1.24",
+    "@types/websocket": "^1.0.10",
+    "@types/ws": "^8.5.10"
+  },
+  "dependencies": {
+    "superagent": "^8.1.2",
+    "ws": "^8.14.2"
+  },
+  "scripts": {
+    "start": "npx ts-node src/judger.ts"
+  },
+  "author": "Milmon <milmon@qq.com>",
+  "license": "GPL-3.0"
+}
