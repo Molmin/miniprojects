@@ -8,7 +8,8 @@
     "@types/fs-extra": "^11.0.3",
     "@types/node": "^20.8.9",
     "@types/superagent": "^4.1.20",
-    "@types/yamljs": "^0.2.33"
+    "@types/yamljs": "^0.2.33",
+    "typescript": "^5.3.3"
   },
   "dependencies": {
     "adm-zip": "^0.5.10",
@@ -17,10 +18,10 @@
     "yamljs": "^0.3.0"
   },
   "scripts": {
-    "start": "npx ts-node src/transmission.ts",
-    "rejudge": "npx ts-node src/rejudge.ts",
-    "check": "npx ts-node src/check.ts",
-    "atcoder:test": "npx ts-node src/atcoder_test.ts"
+    "start": "node src/transmission.js",
+    "rejudge": "node src/rejudge.js",
+    "check": "node src/check.js",
+    "atcoder:test": "node src/atcoder_test.js"
   },
   "author": "Milmon <milmon@qq.com>",
   "license": "GPL-3.0"
