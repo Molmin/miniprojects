@@ -15,6 +15,7 @@ async function main() {
         list = list.concat(pdocs)
     }
     console.log(list.join('\n'))
+    console.log(list.length)
 }
 
 main()

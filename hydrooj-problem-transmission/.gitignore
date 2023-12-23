@@ -1,7 +1,9 @@
 node_modules
 package-lock.json
+yarn.lock
 data
 secret.json
 secret*.json
 job.json
 job*.json
+*.js
