@@ -22,7 +22,7 @@ jobs:
       run: |
         cd hydrooj-problem-transmission
         npm i
-        npm i ts-node -g
+        tsc
         cd ..
     - name: Init HydroOJ Secret
       run: node scripts/checkProblems.mjs
