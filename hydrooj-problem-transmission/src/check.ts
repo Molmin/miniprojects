@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { ensureDirSync } from 'fs-extra'
 import HydroAccountService from './basic/service'
 import { SecretConfig } from './basic/secret'
+import { Queue } from './queue'
 
 interface SubtaskConfig {
     id: number
@@ -37,6 +38,8 @@ const service = new HydroAccountService(
     secret.cookie_sid ? `sid=${secret.cookie_sid}` : '',
     secret.domain,
 )
+
+const queue = new Queue(5)
 
 let totalError = 0
 let nowpid: string = '', englishName: string = ''
@@ -181,7 +184,7 @@ async function main() {
     console.log(`Logged in as user ${username}`)
     ensureDirSync('data/tmp')
     const pids = await service.listProblems()
-    for (let pid of pids) {
+    await Promise.all(pids.map((pid) => queue.waitForTask(async () => {
         nowpid = pid
         maxSampleId = 0
         testdata = ['config.yaml']
@@ -192,7 +195,7 @@ async function main() {
         const title = await service.getProblemTitle(pid)
         if (!/^.+?（[a-z]+?）$/.test(title)) {
             throwError(`"${title}" is not a valid problem title`)
-            continue
+            return
         }
         englishName = title.split('（')[1].split('）')[0]
         console.log(`Checking problem ${pid} (${englishName})`)
@@ -203,7 +206,7 @@ async function main() {
         const files = await service.getFiles(pid)
         if (!files.testdata.includes('config.yaml')) {
             throwError('No judge config file found.')
-            continue
+            return
         }
         console.log(`Checking judge config`)
         const config = await service.getJudgeConfig(pid)
@@ -226,7 +229,8 @@ async function main() {
             if (content !== convert(readFileSync('data/tmp/file').toString()))
                 throwError(`Sample file ${filename} is not same as the sample in statement.`)
         }
-    }
+    })))
+    queue.close()
     if (totalError > 0) throw new Error(`Found ${totalError} errors.`)
 }
 
