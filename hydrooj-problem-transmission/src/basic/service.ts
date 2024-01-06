@@ -151,8 +151,8 @@ export default class HydroAccountService {
 
     async getJudgeConfig(pid: string) {
         const filename = 'config.yaml'
-        await this.downloadFile((await this.getLinks(pid, [filename], 'testdata'))[filename], 'tmp/config.yaml')
-        return yamljs.load('data/tmp/config.yaml')
+        await this.downloadFile((await this.getLinks(pid, [filename], 'testdata'))[filename], `tmp/config-${pid}.yaml`)
+        return yamljs.load(`data/tmp/config-${pid}.yaml`)
     }
 
     async downloadFile(link: string, target: string) {

@@ -42,24 +42,30 @@ const service = new HydroAccountService(
 const queue = new Queue(5)
 
 let totalError = 0
-let nowpid: string = '', englishName: string = ''
-let additional_file: string[] = []
-let testdata: string[] = []
-let maxSampleId = 0
-let sampleInputId: number[] = [], sampleOutputId: number[] = []
-let additional_file_assertions: Record<string, string> = {}
+
+interface ProblemData {
+    englishName: string
+    additional_file: string[]
+    testdata: string[]
+    maxSampleId: number
+    sampleInputId: number[]
+    sampleOutputId: number[]
+    additional_file_assertions: Record<string, string>
+}
+
+const data: Record<string, ProblemData> = {}
 
 function convert(content: string): string {
     return content.replace(/\r/g, '').trim()
         .split('\n').map(x => x.trim()).join('\n')
 }
 
-function throwError(content: string) {
+function throwError(pid: string, content: string) {
     totalError++
-    console.error(`Error: ${nowpid}: ${content}`)
+    console.error(`Error: ${pid}: ${content}`)
 }
 
-function checkStatement(content: string) {
+function checkStatement(content: string, pid: string) {
     content = convert(content)
     const blocks = content
         .split('\n\n')
@@ -76,28 +82,28 @@ function checkStatement(content: string) {
                 /^## 评分方式$/.test(block) ||
                 /^## 数据范围与评分方式$/.test(block) ||
                 /^## 子任务$/.test(block)
-            )) throwError(`"${block}" is not a valid title`)
+            )) throwError(pid, `"${block}" is not a valid title`)
             continue
         }
         if (block.startsWith('```')) {
             if (!block.startsWith('```') || !block.endsWith('```'))
-                throwError(`"${block}" is not a valid code block`)
+                throwError(pid, `"${block}" is not a valid code block`)
             else {
                 const lang = block.split('\n')[0].split('|')[0].replace('```', '')
                 const content = convert(block.slice(block.split('\n')[0].length + 1, -4))
                 if (/^input\d+$/.test(lang)) {
                     const id = lang.replace('input', '')
-                    sampleInputId.push(+id)
-                    additional_file.push(`${englishName}${id}.in`)
-                    maxSampleId = Math.max(maxSampleId, +id)
-                    additional_file_assertions[`${englishName}${id}.in`] = content
+                    data[pid].sampleInputId.push(+id)
+                    data[pid].additional_file.push(`${data[pid].englishName}${id}.in`)
+                    data[pid].maxSampleId = Math.max(data[pid].maxSampleId, +id)
+                    data[pid].additional_file_assertions[`${data[pid].englishName}${id}.in`] = content
                 }
                 if (/^output\d+$/.test(lang)) {
                     const id = lang.replace('output', '')
-                    sampleOutputId.push(+id)
-                    additional_file.push(`${englishName}${id}.ans`)
-                    maxSampleId = Math.max(maxSampleId, +id)
-                    additional_file_assertions[`${englishName}${id}.ans`] = content
+                    data[pid].sampleOutputId.push(+id)
+                    data[pid].additional_file.push(`${data[pid].englishName}${id}.ans`)
+                    data[pid].maxSampleId = Math.max(data[pid].maxSampleId, +id)
+                    data[pid].additional_file_assertions[`${data[pid].englishName}${id}.ans`] = content
                 }
             }
             continue
@@ -105,28 +111,28 @@ function checkStatement(content: string) {
         if (/^见选手目录/.test(block)) {
             const message = `"${block}" is not a valid big sample description`
             if (!/^见选手目录下的 \[`.+?`\]\(file:\/\/.+?\) 和 \[`.+?`\]\(file:\/\/.+?\)。$/.test(block))
-                throwError(message)
+                throwError(pid, message)
             else {
                 const result = /^见选手目录下的 \[`(.+?)`\]\(file:\/\/(.+?)\) 和 \[`(.+?)`\]\(file:\/\/(.+?)\)。$/.exec(block) as string[]
-                const folder = `${englishName}/${englishName}`
+                const folder = `${data[pid].englishName}/${data[pid].englishName}`
                 if (!result[1].startsWith(folder) || !result[1].endsWith('.in')) {
-                    throwError(message)
+                    throwError(pid, message)
                     continue
                 }
                 const id = result[1].substring(folder.length, result[1].length - 3)
                 if (
                     !/^[0-9][1-9]*$/.test(id) ||
                     result[1] !== `${folder}${id}.in` ||
-                    result[2] !== `${englishName}${id}.in` ||
+                    result[2] !== `${data[pid].englishName}${id}.in` ||
                     result[3] !== `${folder}${id}.ans` ||
-                    result[4] !== `${englishName}${id}.ans`
-                ) throwError(message)
+                    result[4] !== `${data[pid].englishName}${id}.ans`
+                ) throwError(pid, message)
                 else {
-                    maxSampleId = Math.max(maxSampleId, +id)
-                    sampleInputId.push(+id)
-                    sampleOutputId.push(+id)
-                    additional_file.push(`${englishName}${id}.in`)
-                    additional_file.push(`${englishName}${id}.ans`)
+                    data[pid].maxSampleId = Math.max(data[pid].maxSampleId, +id)
+                    data[pid].sampleInputId.push(+id)
+                    data[pid].sampleOutputId.push(+id)
+                    data[pid].additional_file.push(`${data[pid].englishName}${id}.in`)
+                    data[pid].additional_file.push(`${data[pid].englishName}${id}.ans`)
                 }
             }
             continue
@@ -134,40 +140,40 @@ function checkStatement(content: string) {
         const AdditionalFileMatcher = /\[.*?\]\(file\:\/\/(.+?)( .+?)?\)/g
         let file
         while (file = AdditionalFileMatcher.exec(block))
-            additional_file.push(file[1])
+            data[pid].additional_file.push(file[1])
     }
     let flag = false
-    for (let sampleId = 1; sampleId <= maxSampleId; sampleId++) {
-        if (sampleInputId[sampleId - 1] !== sampleId) flag = true
-        if (sampleOutputId[sampleId - 1] !== sampleId) flag = true
+    for (let sampleId = 1; sampleId <= data[pid].maxSampleId; sampleId++) {
+        if (data[pid].sampleInputId[sampleId - 1] !== sampleId) flag = true
+        if (data[pid].sampleOutputId[sampleId - 1] !== sampleId) flag = true
     }
-    if (flag) throwError(`Unknown error in samples.`)
+    if (flag) throwError(pid, `Unknown error in samples.`)
     let command
     const CommandMatcher = /<!-- PROBLEM_FORMAT_CHECKER: (.+?) -->/g
     while (command = CommandMatcher.exec(content))
         if (command[1].startsWith('extra_additional_file: '))
-            additional_file.push(command[1].replace('extra_additional_file: ', ''))
+            data[pid].additional_file.push(command[1].replace('extra_additional_file: ', ''))
 }
 
-function checkJudgeConfig(config: JudgeConfig) {
+function checkJudgeConfig(config: JudgeConfig, pid: string) {
     for (let subtask of config.subtasks) {
         for (let testcase of subtask.cases) {
             if (testcase.input !== '/dev/null') {
-                testdata.push(testcase.input)
-                if (!/^[a-z]*?[\d\-]+?\.in$/.test(testcase.input) || !testcase.input.startsWith(englishName))
-                    throwError(`Input file "${testcase.input}" is not a valid name.`)
+                data[pid].testdata.push(testcase.input)
+                if (!/^[a-z]*?[\d\-]+?\.in$/.test(testcase.input) || !testcase.input.startsWith(data[pid].englishName))
+                    throwError(pid, `Input file "${testcase.input}" is not a valid name.`)
             }
             if (testcase.output !== '/dev/null') {
-                testdata.push(testcase.output)
-                if (!/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.output) || !testcase.output.startsWith(englishName))
-                    throwError(`Output file "${testcase.output}" is not a valid name.`)
+                data[pid].testdata.push(testcase.output)
+                if (!/^[a-z]*?[\d\-]+?\.ans$/.test(testcase.output) || !testcase.output.startsWith(data[pid].englishName))
+                    throwError(pid, `Output file "${testcase.output}" is not a valid name.`)
             }
         }
     }
     if (config.checker) {
         if (config.checker !== 'checker.cc')
-            throwError(`Checker file must be 'checker.cc'.`)
-        testdata.push(config.checker)
+            throwError(pid, `Checker file must be 'checker.cc'.`)
+        data[pid].testdata.push(config.checker)
     }
 }
 
@@ -185,49 +191,52 @@ async function main() {
     ensureDirSync('data/tmp')
     const pids = await service.listProblems()
     await Promise.all(pids.map((pid) => queue.waitForTask(async () => {
-        nowpid = pid
-        maxSampleId = 0
-        testdata = ['config.yaml']
-        additional_file = []
-        sampleInputId = []
-        sampleOutputId = []
-        additional_file_assertions = {}
+        data[pid] = {
+            englishName: '',
+            maxSampleId: 0,
+            testdata: ['config.yaml'],
+            additional_file: [],
+            sampleInputId: [],
+            sampleOutputId: [],
+            additional_file_assertions: {},
+        }
         const title = await service.getProblemTitle(pid)
         if (!/^.+?（[a-z]+?）$/.test(title)) {
-            throwError(`"${title}" is not a valid problem title`)
+            throwError(pid, `"${title}" is not a valid problem title`)
             return
         }
-        englishName = title.split('（')[1].split('）')[0]
-        console.log(`Checking problem ${pid} (${englishName})`)
+        data[pid].englishName = title.split('（')[1].split('）')[0]
+        console.log(`Checking problem ${pid} (${data[pid].englishName})`)
         console.log(`Checking statement`)
         const statement = await service.getProblemStatement(pid)
         for (let [, content] of Object.entries(statement))
-            checkStatement(content as string)
+            checkStatement(content as string, pid)
         const files = await service.getFiles(pid)
         if (!files.testdata.includes('config.yaml')) {
-            throwError('No judge config file found.')
+            throwError(pid, 'No judge config file found.')
             return
         }
         console.log(`Checking judge config`)
         const config = await service.getJudgeConfig(pid)
-        checkJudgeConfig(config)
-        for (let file of testdata)
+        checkJudgeConfig(config, pid)
+        for (let file of data[pid].testdata)
             if (!files.testdata.includes(file))
-                throwError(`File "${file}" can not found in testdata.`)
-        for (let file of additional_file)
+                throwError(pid, `File "${file}" can not found in testdata.`)
+        for (let file of data[pid].additional_file)
             if (!files.additional_file.includes(file))
-                throwError(`File "${file}" can not found in additional file.`)
+                throwError(pid, `File "${file}" can not found in additional file.`)
         for (let file of files.testdata)
-            if (!testdata.includes(file) && !ALLOW_EXTRA_TESTDATA.includes(file))
-                throwError(`Testdata "${file}" is not required.`)
+            if (!data[pid].testdata.includes(file) && !ALLOW_EXTRA_TESTDATA.includes(file))
+                throwError(pid, `Testdata "${file}" is not required.`)
         for (let file of files.additional_file)
-            if (!additional_file.includes(file))
-                throwError(`Additional file "${file}" is not required.`)
-        for (let [filename, content] of Object.entries(additional_file_assertions)) {
+            if (!data[pid].additional_file.includes(file))
+                throwError(pid, `Additional file "${file}" is not required.`)
+        for (let [filename, content] of Object.entries(data[pid].additional_file_assertions)) {
             if (!files.additional_file.includes(filename)) continue
-            await service.downloadFile((await service.getLinks(pid, [filename], 'additional_file'))[filename], 'tmp/file')
-            if (content !== convert(readFileSync('data/tmp/file').toString()))
-                throwError(`Sample file ${filename} is not same as the sample in statement.`)
+            const fileId = `${Math.random()}`
+            await service.downloadFile((await service.getLinks(pid, [filename], 'additional_file'))[filename], `tmp/${fileId}`)
+            if (content !== convert(readFileSync(`data/tmp/${fileId}`).toString()))
+                throwError(pid, `Sample file ${filename} is not same as the sample in statement.`)
         }
     })))
     queue.close()
