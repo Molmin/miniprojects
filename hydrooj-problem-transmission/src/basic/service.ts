@@ -56,8 +56,15 @@ export default class HydroAccountService {
         return list
     }
 
-    async existsProblem(pid: string): Promise<boolean> {
-        return !(await this.get(`/p/${pid}`)).body.error
+    existsProblem(pid: string): Promise<boolean> {
+        return new Promise((resolve, reject) =>
+            this.get(`/p/${pid}`)
+                .end((error, { status }) => {
+                    if (status === 200) resolve(true)
+                    else if (status === 404) resolve(false)
+                    else reject()
+                })
+        )
     }
 
     async getProblemSummary(pid: string, target: string) {
