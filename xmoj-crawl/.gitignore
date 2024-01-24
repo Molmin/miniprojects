@@ -4,3 +4,4 @@ config.json
 *.log
 *.html
 data
+*.js

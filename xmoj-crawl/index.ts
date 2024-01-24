@@ -22,9 +22,10 @@ async function main() {
         processTotalContests++
         await new Promise((resolve) => setTimeout(resolve, 100))
         const { contestId } = contest
-        ensureDirSync(`data/contests/${contestId}`)
         console.log(`[${processTotalContests}/${contests.length}] Getting contest ${contestId} (${contest.title})`)
         const result = await xmoj.getContest(contestId)
+        if (!result) continue
+        ensureDirSync(`data/contests/${contestId}`)
         writeFileSync(`data/contests/${contestId}/contest.json`, JSON.stringify(result, null, '  '))
         let pid = 0
         for (let problem of result.problems) {

@@ -88,8 +88,9 @@ export default class XMOJAccountService {
         return contests
     }
 
-    async getContest(contestId: number): Promise<XMOJContestDetail> {
+    async getContest(contestId: number): Promise<XMOJContestDetail | null> {
         const response = await this.get('/contest.php').query({ cid: contestId })
+        if (response.text.includes('比赛尚未开始或私有，不能查看题目。')) return null
         const { window: { document } } = new JSDOM(response.text)
         const title = document.querySelector('title')?.textContent as string
         const mainNode = document.querySelector('center') as Element
