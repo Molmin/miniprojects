@@ -5,7 +5,7 @@ import { XMOJContestDetail } from "./interface"
 const config = JSON.parse(readFileSync('config.json').toString())
 
 const hydro = new HydroAccountService(
-    'https://hydro.ac',
+    'https://ws.hydrooj.com',
     `sid=${config.hydro_cookie}`,
     'xmingoj',
 )
@@ -54,9 +54,10 @@ async function main() {
     if (username === 'Guest') return console.error(`Not logged in`)
     console.log(`Logged in HydroOJ as user ${username}`)
     const problems = readdirSync('data/problems')
-    let processTotalProblems = 0
+    let processTotalProblems = 0, startFrom = config.startFrom
     for (let problemId of problems) {
         processTotalProblems++
+        if (startFrom > processTotalProblems) continue
         console.log(`[${processTotalProblems}/${problems.length}] Solving problem ${problemId}`)
         const pid = `P${problemId}`
         const problemDir = `data/problems/${problemId}`
