@@ -1,4 +1,4 @@
-import { createWriteStream, readFileSync } from 'node:fs'
+import { createWriteStream, existsSync, readFileSync } from 'node:fs'
 import superagent from 'superagent'
 import { ensureDirSync } from "fs-extra"
 import { JSDOM } from 'jsdom'
@@ -55,6 +55,8 @@ async function main() {
         console.log(`Found ${scripts.length} videos in contest ${contestId}`)
         for (let i = 0; i < scripts.length; i++) {
             tasks.push(downloadQueue.waitForTask(async () => {
+                const target = `data/video/${contestId}${scripts.length <= 1 ? '' : `-${i + 1}`}.mp4`
+                if (existsSync(target) && config.skipDownloadedVideo) return
                 const script = (await getVideos(contestId))[i]
                 let data
                 try {
@@ -68,7 +70,6 @@ async function main() {
                 if (Object.entries(data).length != 10) throw new Error(`Found error in contest ${contestId}`)
                 const url = getVideoUrl(data)
                 const { body: video } = await superagent.get(url)
-                const target = `data/video/${contestId}${scripts.length <= 1 ? '' : `-${i + 1}`}.mp4`
                 console.log(`Start downloading contest ${contestId} video #${i + 1}`)
                 await downloadFile(video.PlayInfoList.PlayInfo[0].PlayURL, target)
                 console.log(`Downloaded contest ${contestId} video #${i + 1}`)

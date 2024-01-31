@@ -48,7 +48,7 @@ async function main() {
                     if (res.judge.output !== '标准输出')
                         throw new Error(`Error format at ${problem.problemId}`)
                 }
-                else if (!/^[a-z]+?\.in$/.test(res.judge.input))
+                else if (!/^[a-z0-9]+?\.in$/.test(res.judge.input))
                     throw new Error(`Error format at ${problem.problemId}`)
                 else if (res.judge.input.split('.')[0] + '.out' !== res.judge.output)
                     throw new Error(`Error format at ${problem.problemId}`)
