@@ -25,7 +25,6 @@ async function downloadFile(link: string, target: string) {
         request.on('error', reject)
         request.on('timeout', reject)
     })
-    console.log(`Downloaded File ${target}`)
 }
 
 async function getVideos(contestId: number) {
