@@ -45,6 +45,7 @@ async function main() {
     if (username === 'Guest') return console.error(`Not logged in`)
     console.log(`Logged in as user ${username}`)
     for (let pid of config.download) {
+        // await new Promise((resolve) => setTimeout(resolve, 500))
         service.domainId = secret.domain
         console.log(`Downloading problem ${secret.domain}/${pid}`)
         const path_prefix = `${service.domainId}/${pid}`

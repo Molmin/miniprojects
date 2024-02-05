@@ -47,7 +47,9 @@ async function main() {
     for (const contestId of contestIds) {
         await new Promise((resolve) => setTimeout(resolve, 3000))
         const result = await xmoj.getContest(contestId)
-        if (!result?.review) {
+        if (!result) continue
+        if (result.date <= (config.shouldAfter || '0000-00-00')) continue
+        if (!result.review) {
             console.log(`No review in contest ${contestId}`)
             continue
         }
