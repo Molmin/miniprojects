@@ -10,6 +10,12 @@ function md5(str: string) {
     return result
 }
 
+const UA = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+    'AppleWebKit/537.36 (KHTML, like Gecko)',
+    'Chrome/118.0.0.0 Safari/537.36 Edg/118.0.2088.76',
+].join(' ')
+
 export default class XMOJAccountService {
     private cookie: string = ''
     constructor(
@@ -21,15 +27,20 @@ export default class XMOJAccountService {
         return superagent
             .get(this.endPoint + url)
             .set('Cookie', this.cookie)
+            .set('User-Agent', UA)
     }
     post(url: string) {
         return superagent
             .post(this.endPoint + url)
             .set('Cookie', this.cookie)
+            .set('User-Agent', UA)
     }
 
     async isLoggedIn(): Promise<boolean> {
-        const response = await this.get('/template/bs3/profile.php')
+        const home = await this.get('/')
+        const { window: { document } } = new JSDOM(home.text)
+        const path = document.querySelector('ul.dropdown-menu[role="menu"] > script')?.getAttribute('src') || ''
+        const response = await this.get('/' + path)
         return !response.text.includes('登录')
     }
 
