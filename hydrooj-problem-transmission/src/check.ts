@@ -4,6 +4,12 @@ import HydroAccountService from './basic/service'
 import { SecretConfig } from './basic/secret'
 import { Queue } from './queue'
 
+const presetCheckers = [
+    'acmp', 'caseicmp', 'casencmp', 'casewcmp', 'dcmp', 'fcmp', 'hcmp',
+    'icmp', 'lcmp', 'ncmp', 'nyesno', 'pointscmp', 'pointsinfo',
+    'rcmp', 'rcmp4', 'rcmp6', 'rcmp9', 'rncmp', 'uncmp', 'wcmp', 'yesno',
+]
+
 interface SubtaskConfig {
     id: number
     if: number[]
@@ -170,7 +176,7 @@ function checkJudgeConfig(config: JudgeConfig, pid: string) {
             }
         }
     }
-    if (config.checker) {
+    if (config.checker && !presetCheckers.includes(config.checker)) {
         if (config.checker !== 'checker.cc')
             throwError(pid, `Checker file must be 'checker.cc'.`)
         data[pid].testdata.push(config.checker)
