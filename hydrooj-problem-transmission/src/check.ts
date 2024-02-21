@@ -81,6 +81,7 @@ function checkStatement(content: string, pid: string) {
     for (let block of blocks) {
         if (block.startsWith('#')) {
             if (!(
+                /^## 外部库说明$/.test(block) ||
                 /^## 输入格式$/.test(block) ||
                 /^## 输出格式$/.test(block) ||
                 /^## 样例 [1-9][0-9]*$/.test(block) ||
