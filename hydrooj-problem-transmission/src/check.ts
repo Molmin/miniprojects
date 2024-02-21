@@ -26,6 +26,7 @@ interface JudgeConfig {
     time?: string
     memory?: string
     checker?: string
+    user_extra_files?: string[]
     subtasks: SubtaskConfig[]
 }
 
@@ -156,9 +157,10 @@ function checkStatement(content: string, pid: string) {
     if (flag) throwError(pid, `Unknown error in samples.`)
     let command
     const CommandMatcher = /<!-- PROBLEM_FORMAT_CHECKER: (.+?) -->/g
-    while (command = CommandMatcher.exec(content))
+    while (command = CommandMatcher.exec(content)) {
         if (command[1].startsWith('extra_additional_file: '))
             data[pid].additional_file.push(command[1].replace('extra_additional_file: ', ''))
+    }
 }
 
 function checkJudgeConfig(config: JudgeConfig, pid: string) {
@@ -176,6 +178,8 @@ function checkJudgeConfig(config: JudgeConfig, pid: string) {
             }
         }
     }
+    for (let file of config.user_extra_files || [])
+        data[pid].testdata.push(file)
     if (config.checker && !presetCheckers.includes(config.checker)) {
         if (config.checker !== 'checker.cc')
             throwError(pid, `Checker file must be 'checker.cc'.`)
