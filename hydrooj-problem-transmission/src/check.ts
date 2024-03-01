@@ -202,6 +202,7 @@ async function main() {
     ensureDirSync('data/tmp')
     const pids = await service.listProblems()
     await Promise.all(pids.map((pid) => queue.waitForTask(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1000) as any)
         data[pid] = {
             englishName: '',
             maxSampleId: 0,
