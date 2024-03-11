@@ -202,7 +202,13 @@ async function main() {
     ensureDirSync('data/tmp')
     const pids = await service.listProblems()
     await Promise.all(pids.map((pid) => queue.waitForTask(async () => {
-        await new Promise((resolve) => setTimeout(resolve, 1000) as any)
+        if (pids.filter((id) => pid < id).length > 10) {
+            if (Math.random() < 0.8) {
+                console.info(`Skipped problem ${pid}`)
+                return
+            }
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5000) as any)
         data[pid] = {
             englishName: '',
             maxSampleId: 0,
