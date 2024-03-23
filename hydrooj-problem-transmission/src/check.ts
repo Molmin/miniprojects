@@ -32,7 +32,7 @@ interface JudgeConfig {
 
 const ALLOW_EXTRA_TESTDATA = [
     ...['py', 'sh', 'cc', 'cpp', 'js', 'mjs', 'ts']
-        .map((ext: string) => ['generator', 'validator', ''].map((name) => `${name}.${ext}`)).flat(),
+        .map((ext: string) => ['generator', 'validator'].map((name) => `${name}.${ext}`)).flat(),
 ]
 
 console.log({
