@@ -24,7 +24,7 @@ async function main() {
         const { contestId } = contest
         console.log(`[${processTotalContests}/${contests.length}] Getting contest ${contestId} (${contest.title})`)
         const result = await xmoj.getContest(contestId)
-        if (!result) continue
+        if (!result || result.date < config.shouldAfter) continue
         ensureDirSync(`data/contests/${contestId}`)
         writeFileSync(`data/contests/${contestId}/contest.json`, JSON.stringify(result, null, '  '))
         let pid = 0
@@ -48,7 +48,7 @@ async function main() {
                     if (res.judge.output !== '标准输出')
                         throw new Error(`Error format at ${problem.problemId}`)
                 }
-                else if (!/^[a-z0-9]+?\.in$/.test(res.judge.input))
+                else if (!/^[A-Za-z0-9]+?\.in$/.test(res.judge.input))
                     throw new Error(`Error format at ${problem.problemId}`)
                 else if (res.judge.input.split('.')[0] + '.out' !== res.judge.output)
                     throw new Error(`Error format at ${problem.problemId}`)
