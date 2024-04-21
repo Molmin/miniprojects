@@ -18,7 +18,7 @@ export default class HydroAccountService {
     }
     download(url: string) {
         return superagent
-            .get(this.endPoint + url)
+            .get(new URL(url, this.endPoint).toString())
             .set('Cookie', this.cookie)
     }
     post(url: string) {
