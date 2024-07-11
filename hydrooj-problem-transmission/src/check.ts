@@ -90,7 +90,8 @@ function checkStatement(content: string, pid: string) {
                 /^## 数据范围$/.test(block) ||
                 /^## 评分方式$/.test(block) ||
                 /^## 数据范围与评分方式$/.test(block) ||
-                /^## 子任务$/.test(block)
+                /^## 子任务$/.test(block) ||
+                /^## 提示/.test(block)
             )) throwError(pid, `"${block}" is not a valid title`)
             continue
         }
