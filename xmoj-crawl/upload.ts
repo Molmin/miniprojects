@@ -5,23 +5,14 @@ import { XMOJContestDetail } from "./interface"
 const config = JSON.parse(readFileSync('config.json').toString())
 
 const hydro = new HydroAccountService(
-    'https://ws.hydrooj.com',
+    'https://hydro.ac',
     `sid=${config.hydro_cookie}`,
     'xmingoj',
 )
 
-async function updateContestList(contests: string[]) {
-    const DISCUSSION_ID = '656024668f03789237c50a3a'
-    const REPLY_ID = '65602684813ec291a5245d64'
-    const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-
-    const disabled = (await hydro
-        .get(`/discuss/${DISCUSSION_ID}/${REPLY_ID}/raw`)
-        .accept('text/html'))
-        .text.trim().split(' ')
-    console.log(`${disabled.length} disabled messages found`)
-
-    const markdown = contests
+const CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
+function getContestListMarkdown(contests: string[], disabled: string[]) {
+    return contests
         .map((contestId: string) => {
             const contestDir = `data/contests/${contestId}`
             return JSON.parse(readFileSync(`${contestDir}/contest.json`).toString()) as XMOJContestDetail
@@ -39,13 +30,34 @@ async function updateContestList(contests: string[]) {
                     .filter(({ problem }) => !disabled.includes(`P${problem.problemId}`))
                     .map(({ problem, index }) => `\n  \n  ${CHARSET[index]}. [](/p/P${problem.problemId})`).join('')
         }).join('\n\n')
+}
+
+async function updateContestList(contests: string[]) {
+    const DISCUSSION_ID = '656024668f03789237c50a3a'
+    const DISCUSSION_ID2 = '669355970555ec0fa7cb5002'
+    const REPLY_ID = '65602684813ec291a5245d64'
+
+    const disabled = (await hydro
+        .get(`/discuss/${DISCUSSION_ID}/${REPLY_ID}/raw`)
+        .accept('text/html'))
+        .text.trim().split(' ')
+    console.log(`${disabled.length} disabled messages found`)
+
     await hydro.post(`/discuss/${DISCUSSION_ID}/edit`)
         .send({
             operation: 'update',
             title: 'XMOJ 比赛列表',
             highlight: 'on',
             pin: 'on',
-            content: markdown,
+            content: getContestListMarkdown(contests.slice(0, Math.floor(contests.length / 2)), disabled),
+        })
+    await hydro.post(`/discuss/${DISCUSSION_ID2}/edit`)
+        .send({
+            operation: 'update',
+            title: 'XMOJ 比赛列表 2',
+            highlight: 'on',
+            pin: 'on',
+            content: getContestListMarkdown(contests.slice(Math.floor(contests.length / 2) + 1), disabled),
         })
 }
 
