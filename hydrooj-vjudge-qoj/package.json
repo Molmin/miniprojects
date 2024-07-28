@@ -1,0 +1,8 @@
+{
+  "name": "hydrooj-vjudge-qoj",
+  "version": "1.0.0",
+  "description": "Remote Judge to QOJ.ac",
+  "main": "index.ts",
+  "author": "Milmon <milmon@qq.com>",
+  "license": "MIT"
+}
