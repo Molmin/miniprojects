@@ -204,13 +204,13 @@ async function main() {
     ensureDirSync('data/tmp')
     const pids = await service.listProblems()
     await Promise.all(pids.map((pid) => queue.waitForTask(async () => {
-        if (pids.filter((id) => pid < id).length > 10) {
-            if (Math.random() < 0.8) {
+        if (pids.filter((id) => pid < id).length > 5) {
+            if (Math.random() < 0.9) {
                 console.info(`Skipped problem ${pid}`)
                 return
             }
         }
-        await new Promise((resolve) => setTimeout(resolve, Math.random() * 4000 + 1000) as any)
+        await new Promise((resolve) => setTimeout(resolve, Math.random() * 5000 + 2000) as any)
         data[pid] = {
             englishName: '',
             maxSampleId: 0,
