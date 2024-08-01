@@ -15,17 +15,20 @@ export default class HydroAccountService {
             .get(this.endPoint + '/d/' + this.domainId + url)
             .set('Cookie', this.cookie)
             .accept('application/json')
+            .retry(5)
     }
     download(url: string) {
         return superagent
             .get(new URL(url, this.endPoint).toString())
             .set('Cookie', this.cookie)
+            .retry(5)
     }
     post(url: string) {
         return superagent
             .post(this.endPoint + '/d/' + this.domainId + url)
             .set('Cookie', this.cookie)
             .accept('application/json')
+            .retry(5)
     }
 
     async getLoggedInUser(): Promise<string> {
