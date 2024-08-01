@@ -47,7 +47,7 @@ const service = new HydroAccountService(
     secret.domain,
 )
 
-const queue = new Queue(5)
+const queue = new Queue(3)
 
 let totalError = 0
 
