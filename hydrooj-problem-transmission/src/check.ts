@@ -210,7 +210,7 @@ async function main() {
                 return
             }
         }
-        await new Promise((resolve) => setTimeout(resolve, 5000) as any)
+        await new Promise((resolve) => setTimeout(resolve, Math.random() * 4000 + 1000) as any)
         data[pid] = {
             englishName: '',
             maxSampleId: 0,
